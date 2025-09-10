@@ -1,0 +1,67 @@
+{
+  "description": "User Login Validation",
+  "enabled": true,
+  "testSteps": [
+    {
+      "stepName": "Navigate to login page",
+      "action": "goto",
+      "data": "/practice-test-login",
+      "validations": [
+        {
+          "type": "toHaveTitle",
+          "data": "Test Login | Practice Test Automation",
+          "soft": true,
+          "message": "Title should be 'Test Login | Practice Test Automation'"
+        },
+        {
+          "type": "toBeVisible",
+          "selector": "submit",
+          "selectorType": "id",
+          "message": "Login button should be visible",
+          "soft": true
+        },
+        {
+          "type": "toHaveText",
+          "selector": "#login > h2",
+          "data": "Test login",
+          "soft": true,
+          "message": "Login form should have 'Test login' as a data-testid attribute"
+        }
+      ]
+    },
+    {
+      "stepName": "Fill in login form with valid credentials",
+      "action": "fill",
+      "selector": "username",
+      "selectorType": "id",
+      "data": "student"
+    },
+    {
+      "stepName": "Fill password",
+      "action": "fill",
+      "selector": "password",
+      "selectorType":"id",
+      "data": "Password123"
+    },
+    {
+      "stepName": "Click login button",
+      "action": "click",
+      "selector": "submit",
+      "selectorType": "id",
+      "validations": [
+        {
+          "type": "toHaveURL",
+          "data": "/logged-in-successfully",
+          "message": "URL should navigate to dashboard"
+        },
+        {
+          "type": "toHaveClass",
+          "selector": ".post-title",
+          "data": "post-title",
+          "soft": true,
+          "message": "User status element should have the 'post-title' class"
+        }
+      ]
+    }
+  ]
+}

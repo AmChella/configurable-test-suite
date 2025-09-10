@@ -1,0 +1,27 @@
+{
+  "name": "configurable-test-suite",
+  "version": "1.0.0",
+  "description": "Custom Test Suite",
+  "main": "app.js",
+  "scripts": {
+    "test": "npx playwright test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/AmChella/configurable-test-suite.git"
+  },
+  "keywords": [
+    "custom-test-suite",
+    "playwright"
+  ],
+  "author": "Chella S",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/AmChella/configurable-test-suite/issues"
+  },
+  "homepage": "https://github.com/AmChella/configurable-test-suite#readme",
+  "dependencies": {
+    "@playwright/test": "^1.55.0",
+    "dotenv": "^17.2.2"
+  }
+}
