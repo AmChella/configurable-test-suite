@@ -30,6 +30,32 @@
       ]
     },
     {
+      "stepName": "Hover over info icon",
+      "action": "hover",
+      "selector": ".info-icon",
+      "selectorType": "css"
+    },
+    {
+      "stepName": "Type username (with type action)",
+      "action": "type",
+      "selector": "username",
+      "selectorType": "id",
+      "data": "student"
+    },
+    {
+      "stepName": "Iterate over all help links and hover",
+      "action": "hover",
+      "selector": ".help-link",
+      "selectorType": "css",
+      "iterate": true
+    },
+    {
+      "stepName": "Run custom logic for login analytics",
+      "action": "custom",
+      "customName": "loginAnalytics",
+      "data": { "event": "login_attempt" }
+    },
+    {
       "stepName": "Fill in login form with valid credentials",
       "action": "fill",
       "selector": "username",

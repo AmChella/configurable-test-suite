@@ -1,10 +1,13 @@
-import { Page, expect } from "@playwright/test";
-import { TestStep, ValidationStep } from "./data-loader";
+const { expect } = require("@playwright/test");
+const { customLogicMap } = require("./custom-logic");
+const { TestStep, ValidationStep } = require("./data-loader");
 
-export class ActionExecutor {
-  constructor(private page: Page) {}
+class ActionExecutor {
+  constructor(page) {
+    this.page = page;
+  }
 
-  private getLocator(selector: string, selectorType: string = "css") {
+  getLocator(selector, selectorType = "css") {
     switch (selectorType) {
       case "css":
         return this.page.locator(selector);
@@ -21,30 +24,24 @@ export class ActionExecutor {
     }
   }
 
-  async executeStep(step: TestStep) {
+  /**
+   * Executes a test step, supporting configurable actions, iteration, and custom logic.
+   */
+  async executeStep(step, context = {}) {
     let locator;
     if (step.selector) {
       locator = this.getLocator(step.selector, step.selectorType);
     }
 
-    switch (step.action) {
-      case "goto":
-        await this.page.goto(step.data);
-        break;
-      case "fill":
-        await locator?.fill(step.data);
-        break;
-      case "click":
-        await locator?.click();
-        break;
-      case "press":
-        await locator?.press(step.data);
-        break;
-      case "waitForTimeout":
-        if (step.waitTime) await this.page.waitForTimeout(step.waitTime);
-        break;
-      default:
-        throw new Error(`Unsupported action: ${step.action}`);
+    // Support iteration if step.iterate is true and locator resolves to multiple elements
+    if (step.iterate && locator) {
+      const count = await locator.count();
+      for (let i = 0; i < count; i++) {
+        const nthLocator = locator.nth(i);
+        await this._executeAction(step, nthLocator, context);
+      }
+    } else {
+      await this._executeAction(step, locator, context);
     }
 
     if (step.waitTime) {
@@ -58,7 +55,44 @@ export class ActionExecutor {
     }
   }
 
-  async executeValidation(validation: ValidationStep) {
+  /**
+   * Internal: Executes a single action on a locator or the page.
+   */
+  async _executeAction(step, locator, context) {
+    switch (step.action) {
+      case "goto":
+        await this.page.goto(step.data);
+        break;
+      case "fill":
+        if (locator) await locator.fill(step.data);
+        break;
+      case "type":
+        if (locator) await locator.type(step.data);
+        break;
+      case "click":
+        if (locator) await locator.click();
+        break;
+      case "hover":
+        if (locator) await locator.hover();
+        break;
+      case "press":
+        if (locator) await locator.press(step.data);
+        break;
+      case "waitForTimeout":
+        if (step.waitTime) await this.page.waitForTimeout(step.waitTime);
+        break;
+      case "custom":
+        if (!step.customName || !customLogicMap[step.customName]) {
+          throw new Error(`Custom action '${step.customName}' not found in customLogicMap.`);
+        }
+        await customLogicMap[step.customName](this.page, step, context);
+        break;
+      default:
+        throw new Error(`Unsupported action: ${step.action}`);
+    }
+  }
+
+  async executeValidation(validation) {
     const locator = validation.selector
       ? this.getLocator(validation.selector, validation.selectorType)
       : undefined;
@@ -119,4 +153,4 @@ export class ActionExecutor {
         console.warn(`Unsupported validation type: ${validation.type}`);
     }
   }
-}
+module.exports = { ActionExecutor };
