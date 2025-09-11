@@ -61,7 +61,7 @@ class ActionExecutor {
   async _executeAction(step, locator, context) {
     switch (step.action) {
       case "goto":
-        await this.page.goto(step.data);
+        await this.page.goto(step.path);
         break;
       case "fill":
         if (locator) await locator.fill(step.data);
@@ -101,6 +101,9 @@ class ActionExecutor {
     switch (validation.type) {
       case "toBeVisible":
         await currentExpect(locator, validation.message).toBeVisible();
+        break;
+      case "toBeHidden":
+        await currentExpect(locator, validation.message).toBeHidden();
         break;
       case "toHaveTitle":
         await currentExpect(this.page, validation.message).toHaveTitle(
@@ -153,4 +156,5 @@ class ActionExecutor {
         console.warn(`Unsupported validation type: ${validation.type}`);
     }
   }
+}
 module.exports = { ActionExecutor };
