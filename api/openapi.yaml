@@ -1,4 +1,4 @@
-openapi: 3.0.3
+openapi: 3.1.0
 info:
   title: Configurable Test Suite API
   version: 1.0.0
@@ -38,6 +38,9 @@ paths:
                 headless:
                   type: boolean
                   example: true
+                grep:
+                  type: string
+                  description: Playwright grep filter for tests
                 scenarios:
                   description: Inline scenario or array of scenarios
                   oneOf:
@@ -47,18 +50,34 @@ paths:
                         $ref: '#/components/schemas/TestConfig'
       responses:
         '200':
-          description: Run started and completed
+          description: Run completed with results. On failure, may include stdout/stderr when reports are unavailable.
           content:
             application/json:
               schema:
                 type: object
                 properties:
+                  ok:
+                    type: boolean
+                    description: Success indicator
                   code:
                     type: integer
-                    description: Process exit code
+                    description: Playwright process exit code
+                  runId:
+                    type: string
+                    description: Unique run identifier
+                  reports:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TestRecord'
+                  http:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/HttpContextItem'
                   stdout:
                     type: string
                   stderr:
+                    type: string
+                  note:
                     type: string
         '400':
           description: Invalid input
@@ -69,8 +88,170 @@ paths:
                 properties:
                   error:
                     type: string
+  /reports:
+    get:
+      summary: Query reports
+      parameters:
+        - in: query
+          name: title
+          schema:
+            type: string
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [passed, failed, skipped, timedOut, interrupted]
+        - in: query
+          name: from
+          schema:
+            type: integer
+            format: int64
+        - in: query
+          name: to
+          schema:
+            type: integer
+            format: int64
+        - in: query
+          name: limit
+          schema:
+            type: integer
+        - in: query
+          name: runId
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Reports list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  count:
+                    type: integer
+                  summary:
+                    type: object
+                    properties:
+                      total:
+                        type: integer
+                      byStatus:
+                        type: object
+                        additionalProperties:
+                          type: integer
+                  reports:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TestRecord'
+  /reports/{runId}:
+    get:
+      summary: Get reports for a specific run
+      parameters:
+        - in: path
+          name: runId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Reports for the run
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  runId:
+                    type: string
+                  count:
+                    type: integer
+                  summary:
+                    type: object
+                    properties:
+                      total:
+                        type: integer
+                      byStatus:
+                        type: object
+                        additionalProperties:
+                          type: integer
+                  reports:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TestRecord'
 components:
   schemas:
+    HttpTextAttachment:
+      type: object
+      properties:
+        file:
+          type: string
+        size:
+          type: integer
+        content:
+          type: string
+    HttpTraceAttachment:
+      type: object
+      properties:
+        file:
+          type: string
+        size:
+          type: integer
+    HttpAttachments:
+      type: object
+      properties:
+        texts:
+          type: array
+          items:
+            $ref: '#/components/schemas/HttpTextAttachment'
+        traces:
+          type: array
+          items:
+            $ref: '#/components/schemas/HttpTraceAttachment'
+    HttpContextItem:
+      type: object
+      properties:
+        testFolder:
+          type: string
+        attachments:
+          $ref: '#/components/schemas/HttpAttachments'
+    TestRecord:
+      type: object
+      properties:
+        title:
+          type: string
+        location:
+          type: string
+        status:
+          type: string
+        startTime:
+          type: integer
+          format: int64
+        endTime:
+          type: integer
+          format: int64
+        steps:
+          type: array
+          items:
+            $ref: '#/components/schemas/StepRecord'
+        runId:
+          type: string
+    StepRecord:
+      type: object
+      properties:
+        title:
+          type: string
+        status:
+          type: string
+        error:
+          type: string
+        startTime:
+          type: integer
+          format: int64
+        endTime:
+          type: integer
+          format: int64
     TestStep:
       type: object
       required: [stepName, action]

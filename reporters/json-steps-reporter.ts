@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import { connectMongo, getCollection } from "../helpers/mongo";
 
 type StepRecord = {
   title: string;
@@ -23,9 +24,26 @@ const REPORT_DIR = path.resolve(process.cwd(), "reports/json");
 export default class JsonStepsReporter {
   private currentTest?: TestRecord;
   private filePath?: string;
+  private runId: string = process.env.RUN_ID || "local-" + Date.now();
+  private useMongo = false;
+  private writeFs = (() => {
+    const mongoConfigured = !!process.env.MONGO_URI;
+    const defaultWriteFs = mongoConfigured ? false : true;
+    const envVal = process.env.REPORT_FS;
+    if (envVal === undefined) return defaultWriteFs;
+    return envVal.toLowerCase() !== "false";
+  })();
 
   onBegin() {
-    fs.mkdirSync(REPORT_DIR, { recursive: true });
+    if (this.writeFs) {
+      fs.mkdirSync(REPORT_DIR, { recursive: true });
+    }
+    // Best-effort Mongo init
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises
+    (async () => {
+      const db = await connectMongo();
+      this.useMongo = !!db;
+    })();
   }
 
   onTestBegin(test: any) {
@@ -75,10 +93,28 @@ export default class JsonStepsReporter {
 
   private flush() {
     if (!this.filePath || !this.currentTest) return;
-    try {
-      fs.writeFileSync(this.filePath, JSON.stringify(this.currentTest, null, 2), "utf-8");
-    } catch {
-      // ignore
+    if (this.writeFs) {
+      try {
+        fs.writeFileSync(this.filePath, JSON.stringify(this.currentTest, null, 2), "utf-8");
+      } catch {}
+    }
+    // Also persist to Mongo if available
+    if (this.useMongo) {
+      // eslint-disable-next-line @typescript-eslint/no-floating-promises
+      (async () => {
+        try {
+          const col = getCollection("reports");
+          if (!col) return;
+          const doc = { ...this.currentTest, runId: this.runId };
+          await col.updateOne(
+            { runId: this.runId, title: doc.title, startTime: doc.startTime },
+            { $set: doc },
+            { upsert: true }
+          );
+        } catch {
+          // ignore DB errors
+        }
+      })();
     }
   }
 }
