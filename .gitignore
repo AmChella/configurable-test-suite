@@ -3,3 +3,8 @@ dist/
 playwright-report/
 test-results/
 .env
+allure-report/
+allure-results/
+logs/*
+reporters/*
+reports/*
