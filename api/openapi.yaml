@@ -4,7 +4,7 @@ info:
   version: 1.0.0
   description: API to trigger Playwright tests with inline scenarios and view docs.
 servers:
-  - url: http://localhost:4000
+  - url: http://localhost:4001
 paths:
   /health:
     get:
@@ -38,9 +38,6 @@ paths:
                 headless:
                   type: boolean
                   example: true
-                grep:
-                  type: string
-                  description: Filter to match test titles
                 scenarios:
                   description: Inline scenario or array of scenarios
                   oneOf:

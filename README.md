@@ -91,11 +91,6 @@ The framework supports environment-specific configurations through `.env` files 
 
 | Variable | Description | Default |
 |----------|-------------|--------|
-| `BASE_URL` | Base URL for your application | `http://localhost:4000` |
-| `TOKEN` | Authentication token for API calls | - |
-| `CI` | Continuous integration mode | `false` |
-
-### Project Structure
 
 ```
 configurable-test-suite/
@@ -123,16 +118,10 @@ configurable-test-suite/
 Test scenarios are defined in JSON files following this structure:
 
 ```json path=null start=null
-{
-  "description": "Login Flow Test",
-  "enabled": true,
   "testOrder": 1,
   "testSteps": [
     {
       "stepName": "Navigate to login page",
-      "action": "goto",
-      "path": "/login"
-    },
     {
       "stepName": "Enter username",
       "action": "fill",
@@ -174,10 +163,6 @@ Test scenarios are defined in JSON files following this structure:
     {
       "stepName": "Validate multiple elements",
       "action": "waitForTimeout",
-      "waitTime": 2000,
-      "validations": [
-        {
-          "type": "toHaveText",
           "selector": ".product-name",
           "data": "Premium Product",
           "soft": true
@@ -203,15 +188,8 @@ Test scenarios are defined in JSON files following this structure:
 | `type` | Type text character by character | `selector` - Input selector, `data` - Text to type |
 | `hover` | Hover over an element | `selector` - Element selector |
 | `press` | Press keyboard keys | `selector` - Element selector, `data` - Key to press |
-| `waitForTimeout` | Wait for specified time | `waitTime` - Milliseconds to wait |
-| `custom` | Execute custom logic | `customName` - Name of custom function, `data` - Custom data |
-
-## 🔍 Selector Types
 
 The framework supports multiple selector strategies:
-
-| Type | Description | Example |
-|------|-------------|--------|
 | `css` | CSS selector (default) | `.class-name`, `#id`, `button` |
 | `xpath` | XPath selector | `//button[@class='submit']` |
 | `id` | Element ID | `username` (becomes `#username`) |
@@ -235,17 +213,12 @@ The framework supports multiple selector strategies:
 ## 🛠 Custom Actions
 
 Extend the framework with custom actions by modifying `helpers/custom-logic.ts`:
-
 ```typescript path=/Users/che/code/Office/configurable-test-suite/helpers/custom-logic.ts start=9
 const customLogicMap = {
   "selectWord": async (page, step, context) => {
     console.log("Executing custom logic 'selectWord'");
     if (!step.data || !step.data.word) {
-      throw new Error("Step data must include a 'word' property.");
-    }
-    const wordToSelect = step.data.word;
 
-    // Use page.evaluate to run JavaScript in the browser context
     await page.evaluate((word) => {
       const range = document.createRange();
       const selection = window.getSelection();
