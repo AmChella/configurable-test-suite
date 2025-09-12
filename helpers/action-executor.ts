@@ -1,13 +1,16 @@
-const { expect } = require("@playwright/test");
-const { customLogicMap } = require("./custom-logic");
-const { TestStep, ValidationStep } = require("./data-loader");
+import { expect, Page, Locator } from "@playwright/test";
+import { customLogicMap } from "./custom-logic";
+import type { TestStep, ValidationStep } from "./data-loader";
+import { logger } from "./logger";
 
-class ActionExecutor {
-  constructor(page) {
+export class ActionExecutor {
+  private page: Page;
+
+  constructor(page: Page) {
     this.page = page;
   }
 
-  getLocator(selector, selectorType = "css") {
+  getLocator(selector: string, selectorType: "css" | "xpath" | "id" | "text" | "testId" = "css"): Locator {
     switch (selectorType) {
       case "css":
         return this.page.locator(selector);
@@ -27,14 +30,15 @@ class ActionExecutor {
   /**
    * Executes a test step, supporting configurable actions, iteration, and custom logic.
    */
-  async executeStep(step, context = {}) {
-    let locator;
+  async executeStep(step: TestStep, context: Record<string, any> = {}) {
+    let locator: Locator | undefined;
     if (step.selector) {
       locator = this.getLocator(step.selector, step.selectorType);
     }
 
     // Support iteration if step.iterate is true and locator resolves to multiple elements
-    if (step.iterate && locator) {
+    // @ts-ignore allow iterate optional custom flag from JSON
+    if ((step as any).iterate && locator) {
       const count = await locator.count();
       for (let i = 0; i < count; i++) {
         const nthLocator = locator.nth(i);
@@ -58,16 +62,16 @@ class ActionExecutor {
   /**
    * Internal: Executes a single action on a locator or the page.
    */
-  async _executeAction(step, locator, context) {
+  async _executeAction(step: TestStep, locator?: Locator, context: Record<string, any> = {}) {
     switch (step.action) {
       case "goto":
-        await this.page.goto(step.path);
+        await this.page.goto(String(step.path ?? "/"));
         break;
       case "fill":
-        if (locator) await locator.fill(step.data);
+        if (locator) await locator.fill(String(step.data ?? ""));
         break;
       case "type":
-        if (locator) await locator.type(step.data);
+        if (locator) await locator.type(String(step.data ?? ""));
         break;
       case "click":
         if (locator) await locator.click();
@@ -76,65 +80,68 @@ class ActionExecutor {
         if (locator) await locator.hover();
         break;
       case "press":
-        if (locator) await locator.press(step.data);
+        if (locator) await locator.press(String(step.data ?? ""));
         break;
       case "waitForTimeout":
         if (step.waitTime) await this.page.waitForTimeout(step.waitTime);
         break;
       case "custom":
-        if (!step.customName || !customLogicMap[step.customName]) {
-          throw new Error(`Custom action '${step.customName}' not found in customLogicMap.`);
+        // @ts-ignore allow customName from JSON
+        if (!(step as any).customName || !customLogicMap[(step as any).customName]) {
+          throw new Error(`Custom action '${(step as any).customName}' not found in customLogicMap.`);
         }
-        await customLogicMap[step.customName](this.page, step, context);
+        // @ts-ignore allow customName from JSON
+        await customLogicMap[(step as any).customName](this.page, step, context);
         break;
       default:
         throw new Error(`Unsupported action: ${step.action}`);
     }
   }
 
-  async executeValidation(validation) {
+  async executeValidation(validation: ValidationStep) {
     const locator = validation.selector
-      ? this.getLocator(validation.selector, validation.selectorType)
+      ? this.getLocator(
+          validation.selector,
+          (validation.selectorType as any) // narrow to supported types
+        )
       : undefined;
-    const currentExpect = validation.soft ? expect.soft : expect;
+    const currentExpect: typeof expect = validation.soft ? (expect as any).soft : expect;
 
     switch (validation.type) {
-      case "toBeVisible":
+      case "toBeVisible": {
+        if (!locator) throw new Error("toBeVisible requires a selector");
         await currentExpect(locator, validation.message).toBeVisible();
         break;
-      case "toBeHidden":
+      }
+      case "toBeHidden": {
+        if (!locator) throw new Error("toBeHidden requires a selector");
         await currentExpect(locator, validation.message).toBeHidden();
         break;
+      }
       case "toHaveTitle":
-        await currentExpect(this.page, validation.message).toHaveTitle(
-          validation.data
-        );
+        await currentExpect(this.page, validation.message).toHaveTitle(String(validation.data ?? ""));
         break;
       case "toHaveURL":
-        await currentExpect(this.page, validation.message).toHaveURL(
-          new RegExp(validation.data)
-        );
+        await currentExpect(this.page, validation.message).toHaveURL(new RegExp(String(validation.data ?? "")));
         break;
-      case "toHaveText":
-        await currentExpect(locator, validation.message).toHaveText(
-          validation.data
-        );
+      case "toHaveText": {
+        if (!locator) throw new Error("toHaveText requires a selector");
+        await currentExpect(locator, validation.message).toHaveText(String(validation.data ?? ""));
         break;
-      case "toHaveValue":
-        await currentExpect(locator, validation.message).toHaveValue(
-          validation.data
-        );
+      }
+      case "toHaveValue": {
+        if (!locator) throw new Error("toHaveValue requires a selector");
+        await currentExpect(locator, validation.message).toHaveValue(String(validation.data ?? ""));
         break;
+      }
       case "toHaveAttribute":
         if (!validation.attribute) {
           throw new Error(
             "Validation type 'toHaveAttribute' requires an 'attribute' key."
           );
         }
-        await currentExpect(locator, validation.message).toHaveAttribute(
-          validation.attribute,
-          validation.data
-        );
+        if (!locator) throw new Error("toHaveAttribute requires a selector");
+        await currentExpect(locator, validation.message).toHaveAttribute(validation.attribute, String(validation.data ?? ""));
         break;
       case "toHaveCSS":
         if (!validation.cssProperty) {
@@ -142,19 +149,17 @@ class ActionExecutor {
             "Validation type 'toHaveCSS' requires a 'cssProperty' key."
           );
         }
-        await currentExpect(locator, validation.message).toHaveCSS(
-          validation.cssProperty,
-          validation.data
-        );
+        if (!locator) throw new Error("toHaveCSS requires a selector");
+        await currentExpect(locator, validation.message).toHaveCSS(validation.cssProperty, String(validation.data ?? ""));
         break;
-      case "toHaveClass":
-        await currentExpect(locator, validation.message).toHaveClass(
-          new RegExp(validation.data)
-        );
+      case "toHaveClass": {
+        if (!locator) throw new Error("toHaveClass requires a selector");
+        await currentExpect(locator, validation.message).toHaveClass(new RegExp(String(validation.data ?? "")));
         break;
+      }
       default:
-        console.warn(`Unsupported validation type: ${validation.type}`);
+        logger.warn(`Unsupported validation type: ${validation.type}`, "ActionExecutor");
     }
   }
 }
-module.exports = { ActionExecutor };
+export default ActionExecutor;

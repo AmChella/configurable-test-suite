@@ -1,0 +1,139 @@
+openapi: 3.0.3
+info:
+  title: Configurable Test Suite API
+  version: 1.0.0
+  description: API to trigger Playwright tests with inline scenarios and view docs.
+servers:
+  - url: http://localhost:4000
+paths:
+  /health:
+    get:
+      summary: Health check
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+  /run-test:
+    post:
+      summary: Trigger Playwright test run
+      description: Runs tests with optional inline scenarios.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                env:
+                  type: string
+                  description: Environment file in configs/ to load
+                  example: dev
+                headless:
+                  type: boolean
+                  example: true
+                grep:
+                  type: string
+                  description: Filter to match test titles
+                scenarios:
+                  description: Inline scenario or array of scenarios
+                  oneOf:
+                    - $ref: '#/components/schemas/TestConfig'
+                    - type: array
+                      items:
+                        $ref: '#/components/schemas/TestConfig'
+      responses:
+        '200':
+          description: Run started and completed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    description: Process exit code
+                  stdout:
+                    type: string
+                  stderr:
+                    type: string
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+components:
+  schemas:
+    TestStep:
+      type: object
+      required: [stepName, action]
+      properties:
+        stepName:
+          type: string
+        action:
+          type: string
+          enum: [goto, click, fill, type, hover, press, waitForTimeout, custom]
+        selector:
+          type: string
+        selectorType:
+          type: string
+          enum: [css, xpath, id, text, testId]
+        path:
+          type: string
+        data:
+          description: Action-specific data payload
+        waitTime:
+          type: integer
+        validations:
+          type: array
+          items:
+            $ref: '#/components/schemas/ValidationStep'
+        customName:
+          type: string
+    ValidationStep:
+      type: object
+      required: [type]
+      properties:
+        type:
+          type: string
+          enum: [toBeVisible, toBeHidden, toHaveTitle, toHaveURL, toHaveText, toHaveValue, toHaveAttribute, toHaveCSS, toHaveClass]
+        selector:
+          type: string
+        selectorType:
+          type: string
+          enum: [css, xpath, id, text, testId]
+        data: {}
+        path:
+          type: string
+        soft:
+          type: boolean
+        message:
+          type: string
+        attribute:
+          type: string
+        cssProperty:
+          type: string
+    TestConfig:
+      type: object
+      required: [description, enabled, testSteps]
+      properties:
+        description:
+          type: string
+        enabled:
+          type: boolean
+        testSteps:
+          type: array
+          items:
+            $ref: '#/components/schemas/TestStep'
+        testOrder:
+          type: integer

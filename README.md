@@ -330,6 +330,21 @@ npm test && npx playwright show-report
 
 ## 📊 Reports and Debugging
 
+### Allure Reports
+
+Allure reporting is integrated. After running tests, generate and open the report:
+
+```bash
+npm run allure:generate
+npm run allure:open
+```
+
+Allure uses results from `allure-results/` and serves a rich report under `allure-report/`.
+
+### JSON Step Reports
+
+In addition to Allure, a custom reporter writes per-test step execution as JSON files to `reports/json/` with structure including each step's title, status (passed/failed/skipped), and timestamps. This helps CI systems to ingest step-level data.
+
 ### HTML Reports
 
 After test execution, view detailed reports:
@@ -344,6 +359,43 @@ The report includes:
 - Network activity
 - Console logs
 - Performance metrics
+
+### Run Tests via API
+
+Start the API server:
+
+```bash
+# Option 1: Transpile then run
+npm run build
+npm run serve:build
+
+# Option 2: Run with ts-node (dev only)
+npm run serve
+```
+
+Trigger a test run:
+
+```bash
+curl -X POST http://localhost:4000/run-test \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "env": "dev",
+    "headless": true,
+    "grep": "Run scenario"
+  }'
+```
+
+Payload options:
+- `env`: which env file in `configs/` to load (defaults to `dev`)
+- `headless`: run browser in headless mode (default true via API)
+- `grep`: optional Playwright grep to filter tests
+
+### Structured Logger
+
+All `console` calls in the framework have been replaced with a structured logger (`helpers/logger.ts`) that:
+- Prints timestamped logs to stdout/stderr by level
+- Writes to daily rolling files under `logs/run-YYYY-MM-DD.log`
+- Supports child loggers with `logger.child('scope')`
 
 ### Debugging Failed Tests
 

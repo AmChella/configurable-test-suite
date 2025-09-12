@@ -13,13 +13,19 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
   workers: process.env.CI ? 1 : undefined,
-  reporter: "html",
+  reporter: [
+    ["list"],
+    ["allure-playwright"],
+    ["./reporters/json-steps-reporter.ts"],
+  ],
   timeout: 60 * 1000,
   use: {
     baseURL: process.env.BASE_URL,
     trace: "on-first-retry",
-    headless: false,
-    args: ["--start-maximized"],
+    headless: process.env.HEADLESS === "true" ? true : false,
+    launchOptions: {
+      args: ["--start-maximized"],
+    },
   },
   // projects: [
   //   {

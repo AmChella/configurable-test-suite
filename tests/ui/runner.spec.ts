@@ -1,6 +1,7 @@
 import { test } from "@playwright/test";
 import { loadTestScenarios } from "../../helpers/data-loader";
 import { ActionExecutor } from "../../helpers/action-executor";
+import { logger } from "../../helpers/logger";
 
 // test.use({ baseURL: "https://practicetestautomation.com" });
 
@@ -13,6 +14,7 @@ for (const scenario of scenarios) {
 
       for (const step of scenario.testSteps) {
         await test.step(step.stepName, async () => {
+          logger.info(`Executing step: ${step.stepName}`, "runner");
           await executor.executeStep(step);
         });
       }
