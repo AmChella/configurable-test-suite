@@ -1,5 +1,5 @@
 import { expect, Page, Locator } from "@playwright/test";
-import { customLogicMap } from "./custom-logic";
+import { customLogicMap, customValidationMap } from "./custom-logic";
 import type { TestStep, ValidationStep } from "./data-loader";
 import { logger } from "./logger";
 
@@ -57,7 +57,7 @@ export class ActionExecutor {
 
     if (step.validations) {
       for (const validation of step.validations) {
-        await this.executeValidation(validation);
+        await this.executeValidation(validation, { locator, context });
       }
     }
   }
@@ -143,40 +143,44 @@ export class ActionExecutor {
     }
   }
 
-  async executeValidation(validation: ValidationStep) {
-    const locator = validation.selector
+  async executeValidation(validation: ValidationStep, extras: { locator?: Locator; context?: Record<string, any> } = {}) {
+    let locator = validation.selector
       ? this.getLocator(
           validation.selector,
           (validation.selectorType as any) // narrow to supported types
         )
-      : undefined;
+      : extras.locator;
+    if (locator && typeof (validation as any).nth === "number" && (validation as any).nth >= 0) {
+      locator = locator.nth((validation as any).nth as number);
+    }
     const currentExpect: typeof expect = validation.soft ? (expect as any).soft : expect;
+    const opts = (validation as any).expectOptions as any;
 
     switch (validation.type) {
       case "toBeVisible": {
         if (!locator) throw new Error("toBeVisible requires a selector");
-        await currentExpect(locator, validation.message).toBeVisible();
+        await currentExpect(locator, validation.message).toBeVisible(opts);
         break;
       }
       case "toBeHidden": {
         if (!locator) throw new Error("toBeHidden requires a selector");
-        await currentExpect(locator, validation.message).toBeHidden();
+        await currentExpect(locator, validation.message).toBeHidden(opts);
         break;
       }
       case "toHaveTitle":
-        await currentExpect(this.page, validation.message).toHaveTitle(String(validation.data ?? ""));
+        await currentExpect(this.page, validation.message).toHaveTitle(String(validation.data ?? ""), opts);
         break;
       case "toHaveURL":
-        await currentExpect(this.page, validation.message).toHaveURL(new RegExp(String(validation.data ?? "")));
+        await currentExpect(this.page, validation.message).toHaveURL(new RegExp(String(validation.data ?? "")), opts);
         break;
       case "toHaveText": {
         if (!locator) throw new Error("toHaveText requires a selector");
-        await currentExpect(locator, validation.message).toHaveText(String(validation.data ?? ""));
+        await currentExpect(locator, validation.message).toHaveText(String(validation.data ?? ""), opts);
         break;
       }
       case "toHaveValue": {
         if (!locator) throw new Error("toHaveValue requires a selector");
-        await currentExpect(locator, validation.message).toHaveValue(String(validation.data ?? ""));
+        await currentExpect(locator, validation.message).toHaveValue(String(validation.data ?? ""), opts);
         break;
       }
       case "toHaveAttribute":
@@ -186,7 +190,7 @@ export class ActionExecutor {
           );
         }
         if (!locator) throw new Error("toHaveAttribute requires a selector");
-        await currentExpect(locator, validation.message).toHaveAttribute(validation.attribute, String(validation.data ?? ""));
+        await currentExpect(locator, validation.message).toHaveAttribute(validation.attribute, String(validation.data ?? ""), opts);
         break;
       case "toHaveCSS":
         if (!validation.cssProperty) {
@@ -195,11 +199,20 @@ export class ActionExecutor {
           );
         }
         if (!locator) throw new Error("toHaveCSS requires a selector");
-        await currentExpect(locator, validation.message).toHaveCSS(validation.cssProperty, String(validation.data ?? ""));
+        await currentExpect(locator, validation.message).toHaveCSS(validation.cssProperty, String(validation.data ?? ""), opts);
         break;
       case "toHaveClass": {
         if (!locator) throw new Error("toHaveClass requires a selector");
-        await currentExpect(locator, validation.message).toHaveClass(new RegExp(String(validation.data ?? "")));
+        await currentExpect(locator, validation.message).toHaveClass(new RegExp(String(validation.data ?? "")), opts);
+        break;
+      }
+      case "custom": {
+        // @ts-ignore allow customName on validation
+        const name = (validation as any).customName;
+        if (!name || !customValidationMap[name]) {
+          throw new Error(`Custom validation '${name}' not found in customValidationMap.`);
+        }
+        await customValidationMap[name](this.page as any, validation as any, { locator, expect: currentExpect, ...(extras.context || {}) });
         break;
       }
       default:

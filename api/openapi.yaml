@@ -313,7 +313,7 @@ components:
       properties:
         type:
           type: string
-          enum: [toBeVisible, toBeHidden, toHaveTitle, toHaveURL, toHaveText, toHaveValue, toHaveAttribute, toHaveCSS, toHaveClass]
+          enum: [toBeVisible, toBeHidden, toHaveTitle, toHaveURL, toHaveText, toHaveValue, toHaveAttribute, toHaveCSS, toHaveClass, custom]
         selector:
           type: string
         selectorType:
@@ -330,6 +330,16 @@ components:
           type: string
         cssProperty:
           type: string
+        customName:
+          type: string
+          description: When type is 'custom', name of the validator in customValidationMap
+        nth:
+          type: integer
+          description: For selector-based validations, target the nth matched element (0-based)
+        expectOptions:
+          type: object
+          additionalProperties: true
+          description: "Options forwarded to Playwright's expect matchers (e.g., { timeout: 5000 })"
     TestConfig:
       type: object
       required: [description, enabled, testSteps]

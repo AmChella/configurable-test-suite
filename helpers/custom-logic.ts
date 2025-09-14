@@ -117,3 +117,44 @@ export const customLogicMap: Record<string, (page: any, step: any, context: Reco
   },
 };
 export default customLogicMap;
+
+// Custom validation map for ActionExecutor
+// Each function should throw an Error to fail the validation, or return/resolves if it passes.
+export const customValidationMap: Record<string, (page: any, validation: any, context: Record<string, any>) => Promise<void>> = {
+  // Example: Validate that an element (or entire page) contains specific text
+  // Usage in JSON:
+  // {
+  //   "type": "custom",
+  //   "customName": "containsText",
+  //   "selector": ".product-name", // optional
+  //   "data": "Premium Product",
+  //   "message": "Product name should include Premium Product"
+  // }
+  async containsText(page, validation, context) {
+    const targetText = String(validation.data ?? "");
+    if (!targetText) {
+      throw new Error("Custom validation 'containsText' requires 'data' with expected substring");
+    }
+    const loc = validation.selector ? context.locator : undefined;
+    let haystack: string | null = null;
+    if (loc) {
+      try {
+        haystack = await loc.textContent();
+      } catch (e) {
+        // Fallback to innerText if textContent fails
+  haystack = await page.evaluate((el: HTMLElement) => el.innerText, await loc.elementHandle());
+      }
+    } else {
+      haystack = await page.content();
+    }
+    haystack = haystack ?? "";
+    if (!haystack.includes(targetText)) {
+      const msg = validation.message || `Expected text to include: ${targetText}`;
+      throw new Error(msg);
+    }
+    // Optionally also use expect if provided
+    if (context.expect && loc) {
+      await context.expect(haystack, validation.message).toContain(targetText);
+    }
+  },
+};

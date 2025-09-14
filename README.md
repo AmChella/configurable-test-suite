@@ -188,7 +188,7 @@ Test scenarios are defined in JSON files following this structure:
 | `type` | Type text character by character | `selector` - Input selector, `data` - Text to type |
 | `hover` | Hover over an element | `selector` - Element selector |
 | `press` | Press keyboard keys | `selector` - Element selector, `data` - Key to press |
-| `upload` | Upload file(s) via `<input type="file">` | `selector` - File input selector, `files` - Array of file items. Each item can be a file path string or an object `{ path?: string, base64?: string, name?: string }`. Options: `resolveFrom` (base dir for relative `path`, default `process.cwd()`), `clearFirst` (boolean, default `true`), `actionOptions` (forwarded to Playwright, e.g. `{ timeout: 10000 }`) |
+| `upload` | Upload file(s) via `<input type="file">` | `selector` - File input selector, `files` - Array of file items. Each item can be a file path string or an object `{ path?: string, contentBase64?: string, name?: string }`. Options: `resolveFrom` (base dir for relative `path`, default `process.cwd()`), `clearFirst` (boolean, default `true`), `actionOptions` (forwarded to Playwright, e.g. `{ timeout: 10000 }`) |
 
 The framework supports multiple selector strategies:
 | `css` | CSS selector (default) | `.class-name`, `#id`, `button` |
@@ -214,6 +214,33 @@ Notes:
 | `toHaveAttribute` | Element has attribute | `selector`, `attribute`, `data` - Expected value |
 | `toHaveCSS` | Element has CSS property | `selector`, `cssProperty`, `data` - Expected value |
 | `toHaveClass` | Element has CSS class | `selector`, `data` - Class pattern |
+Notes:
+- `nth`: For selector-based validations, you can optionally specify `"nth"` to target the nth matching element (0-based).
+- `expectOptions`: You can pass Playwright matcher options such as `{ "timeout": 7000 }` via `expectOptions` on a validation.
+
+Example with `nth` and `expectOptions`:
+
+```json
+{
+  "type": "toBeVisible",
+  "selector": ".list-item",
+  "nth": 2,
+  "expectOptions": { "timeout": 7000 },
+  "message": "Third list item should become visible in time"
+}
+```
+
+Custom validations are supported using `type: "custom"` with a `customName` mapping to a function in `helpers/custom-logic.ts` (`customValidationMap`). Example:
+
+```json
+{
+  "type": "custom",
+  "customName": "containsText",
+  "selector": ".product-name",
+  "data": "Premium Product",
+  "message": "Product name should include Premium Product"
+}
+```
 
 ## 🛠 Custom Actions
 
@@ -277,6 +304,80 @@ const customLogicMap = {
      }
    }
    ```
+
+### Built-in Custom: selectWord
+
+Use the `custom` action with `customName: "selectWord"` to select a specific word on the page. Options:
+- `word` (string, required): The word to select.
+- `selector` (string, optional): CSS selector to scope the search. Defaults to the entire document.
+- `nth` (number, optional): Select the nth occurrence (0-based). Defaults to `0`.
+- `mode` ("mouse" | "keyboard" | "auto", optional): Selection method. Defaults to `"mouse"` ("auto" behaves like "mouse").
+- `method` ("double" | "drag", optional): Mouse method. `"double"` double-clicks center of word; `"drag"` drags from start to end.
+- `wordwise` (boolean, optional): For `mode: "keyboard"`, use word-wise selection chords (Alt/Control + Shift + ArrowRight). Defaults to `false`.
+
+Examples:
+
+```json
+{
+  "stepName": "Select word with keyboard",
+  "action": "custom",
+  "customName": "selectWord",
+  "data": {
+    "word": "Premium",
+    "selector": ".product-name",
+    "mode": "keyboard",
+    "wordwise": true
+  }
+}
+```
+
+```json
+{
+  "stepName": "Drag-select 3rd occurrence",
+  "action": "custom",
+  "customName": "selectWord",
+  "data": {
+    "word": "Account",
+    "nth": 2,
+    "mode": "mouse",
+    "method": "drag"
+  }
+}
+```
+
+### Upload usage examples
+
+String file paths (resolved relative to `resolveFrom` or project root) or base64 content can be provided:
+
+```json
+{
+  "stepName": "Attach documents",
+  "action": "upload",
+  "selector": "input[type=file]",
+  "files": [
+    "./fixtures/documents/terms.pdf",
+    { "path": "./fixtures/images/logo.png" }
+  ]
+}
+```
+
+Base64 payload with a custom filename and preserving existing selection (set `clearFirst: false`):
+
+```json
+{
+  "stepName": "Upload from memory",
+  "action": "upload",
+  "selector": "[data-testid=\"uploader\"]",
+  "clearFirst": false,
+  "files": [
+    {
+      "name": "hello.txt",
+      "contentBase64": "SGVsbG8sIFdvcmxkIQ=="
+    }
+  ],
+  "actionOptions": { "timeout": 15000 }
+}
+```
 
 ## 🚀 Running Tests
 

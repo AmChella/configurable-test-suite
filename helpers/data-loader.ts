@@ -18,6 +18,12 @@ export interface ValidationStep {
   message?: string;
   attribute?: string;
   cssProperty?: string;
+  // For custom validations: specify the name defined in customValidationMap
+  customName?: string;
+  // Optionally target the nth matched element (0-based) when a selector resolves to multiple elements
+  nth?: number;
+  // Optional matcher options forwarded to Playwright's expect matchers (e.g., { timeout: 5000 })
+  expectOptions?: Record<string, any>;
 }
 
 export interface TestStep {
