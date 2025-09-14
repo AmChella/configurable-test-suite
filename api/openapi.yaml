@@ -260,7 +260,7 @@ components:
           type: string
         action:
           type: string
-          enum: [goto, click, fill, type, hover, press, waitForTimeout, custom]
+          enum: [goto, click, fill, type, hover, press, waitForTimeout, upload, custom]
         selector:
           type: string
         selectorType:
@@ -268,8 +268,26 @@ components:
           enum: [css, xpath, id, text, testId]
         path:
           type: string
-        data:
-          description: Action-specific data payload
+        data: {}
+        nth:
+          type: integer
+          description: Select nth match when multiple elements match the selector (0-based)
+        actionOptions:
+          type: object
+          additionalProperties: true
+          description: Options forwarded to Playwright APIs (e.g., timeout, force, noWaitAfter)
+        files:
+          type: array
+          description: Upload file descriptors (either path or base64 content)
+          items:
+            $ref: '#/components/schemas/UploadFileItem'
+        resolveFrom:
+          type: string
+          enum: [cwd, none]
+          description: How to resolve relative file paths (cwd = from project root; none = use as-is)
+        clearFirst:
+          type: boolean
+          description: Clear any existing selected files before setting new ones
         waitTime:
           type: integer
         validations:
@@ -277,6 +295,17 @@ components:
           items:
             $ref: '#/components/schemas/ValidationStep'
         customName:
+          type: string
+    UploadFileItem:
+      type: object
+      properties:
+        path:
+          type: string
+        name:
+          type: string
+        mimeType:
+          type: string
+        contentBase64:
           type: string
     ValidationStep:
       type: object

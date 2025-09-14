@@ -29,6 +29,21 @@ export interface TestStep {
   data?: any;
   waitTime?: number;
   validations?: ValidationStep[];
+  // Optional: index selection when multiple elements match
+  nth?: number;
+  // Optional: action-specific options forwarded to Playwright APIs (e.g., timeout, force, noWaitAfter)
+  actionOptions?: Record<string, any>;
+  // Upload-specific configuration
+  files?: Array<{
+    path?: string; // path to file on disk
+    name?: string; // virtual filename when using contentBase64
+    mimeType?: string; // optional mime type for content payloads
+    contentBase64?: string; // base64-encoded file content
+  }>;
+  // How to resolve relative file paths for upload; 'cwd' (default) resolves from project root, 'none' uses the path as-is
+  resolveFrom?: "cwd" | "none";
+  // If true, clears existing selected files before setting new ones
+  clearFirst?: boolean;
 }
 
 export interface TestConfig {

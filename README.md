@@ -188,6 +188,7 @@ Test scenarios are defined in JSON files following this structure:
 | `type` | Type text character by character | `selector` - Input selector, `data` - Text to type |
 | `hover` | Hover over an element | `selector` - Element selector |
 | `press` | Press keyboard keys | `selector` - Element selector, `data` - Key to press |
+| `upload` | Upload file(s) via `<input type="file">` | `selector` - File input selector, `files` - Array of file items. Each item can be a file path string or an object `{ path?: string, base64?: string, name?: string }`. Options: `resolveFrom` (base dir for relative `path`, default `process.cwd()`), `clearFirst` (boolean, default `true`), `actionOptions` (forwarded to Playwright, e.g. `{ timeout: 10000 }`) |
 
 The framework supports multiple selector strategies:
 | `css` | CSS selector (default) | `.class-name`, `#id`, `button` |
@@ -195,6 +196,10 @@ The framework supports multiple selector strategies:
 | `id` | Element ID | `username` (becomes `#username`) |
 | `text` | Text content | `Login` (finds element containing "Login") |
 | `testId` | Test ID attribute | `login-btn` (finds `[data-testid='login-btn']`) |
+
+Notes:
+- `nth`: For actions using a `selector`, you can optionally specify `"nth"` to target the nth matching element (0-based).
+- `actionOptions`: Most actions accept `actionOptions` which are passed to the underlying Playwright call (e.g., custom timeouts).
 
 ## ✅ Validation Types
 
@@ -349,7 +354,7 @@ npm run serve
 Trigger a test run:
 
 ```bash
-curl -X POST http://localhost:4000/run-test \
+curl -X POST http://localhost:4001/run-test \
   -H 'Content-Type: application/json' \
   -d '{
     "env": "dev",
@@ -362,6 +367,24 @@ Payload options:
 - `env`: which env file in `configs/` to load (defaults to `dev`)
 - `headless`: run browser in headless mode (default true via API)
 - `grep`: optional Playwright grep to filter tests
+
+### API Endpoints
+
+- `POST /run-test`
+  - Triggers a Playwright run using the posted scenario or configured scenarios.
+  - Response shape:
+    - `ok` (boolean): overall success flag.
+    - `runId` (string): unique id for this run (also used when persisting to MongoDB).
+    - `reports` (array): per-test JSON step reports when available.
+    - `http` (array): HTTP-like response context captured from the run (sanitized; no absolute paths or secrets).
+    - `code` (number), `stdout`/`stderr` (sanitized strings) may be included for debugging.
+  - Notes: CORS is enabled. The server listens on `0.0.0.0:4001`. Swagger UI is available at `/docs`.
+
+- `GET /reports`
+  - Retrieve aggregated/sanitized test reports. Supports filters like `title`, `status`, `from`, `to`, `limit`, and `runId`.
+
+- `GET /reports/{runId}`
+  - Retrieve all reports for a specific run id. Returns a summary and the list of report items.
 
 ### Structured Logger
 

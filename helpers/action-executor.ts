@@ -34,6 +34,9 @@ export class ActionExecutor {
     let locator: Locator | undefined;
     if (step.selector) {
       locator = this.getLocator(step.selector, step.selectorType);
+      if (typeof step.nth === "number" && step.nth >= 0) {
+        locator = locator.nth(step.nth);
+      }
     }
 
     // Support iteration if step.iterate is true and locator resolves to multiple elements
@@ -65,22 +68,64 @@ export class ActionExecutor {
   async _executeAction(step: TestStep, locator?: Locator, context: Record<string, any> = {}) {
     switch (step.action) {
       case "goto":
-        await this.page.goto(String(step.path ?? "/"));
+        await this.page.goto(String(step.path ?? "/"), step.actionOptions as any);
         break;
+      case "upload": {
+        if (!locator) throw new Error("upload requires a selector pointing to an <input type='file'> element");
+        // Two ways to provide files:
+        // 1) step.files: array with { path | contentBase64, name, mimeType }
+        // 2) step.data: string or array of strings with file paths
+        const toUploads: any[] = [];
+        const resolveFrom = step.resolveFrom || "cwd";
+        const pathMod = require("path");
+
+        if (Array.isArray(step.files) && step.files.length) {
+          for (const f of step.files) {
+            if (f.contentBase64) {
+              const buf = Buffer.from(String(f.contentBase64), "base64");
+              toUploads.push({ buffer: buf, name: f.name || "upload.bin", mimeType: f.mimeType });
+            } else if (f.path) {
+              const p = String(f.path);
+              const resolvedPath = (resolveFrom === "cwd" && !(p.startsWith("/") || p.match(/^[A-Za-z]:\\\\/)))
+                ? pathMod.resolve(process.cwd(), p)
+                : p;
+              toUploads.push(resolvedPath);
+            }
+          }
+        } else {
+          const asArray = Array.isArray(step.data) ? step.data : [step.data];
+          const filePaths = asArray.filter((p) => !!p).map((p) => String(p));
+          if (!filePaths.length) {
+            throw new Error("upload action requires 'files' array or 'data' with a file path or array of file paths");
+          }
+          for (const p of filePaths) {
+            const resolvedPath = (resolveFrom === "cwd" && !(p.startsWith("/") || p.match(/^[A-Za-z]:\\\\/)))
+              ? pathMod.resolve(process.cwd(), p)
+              : p;
+            toUploads.push(resolvedPath);
+          }
+        }
+
+        if (step.clearFirst) {
+          await locator.setInputFiles([]);
+        }
+        await locator.setInputFiles(toUploads as any, step.actionOptions as any);
+        break;
+      }
       case "fill":
-        if (locator) await locator.fill(String(step.data ?? ""));
+        if (locator) await locator.fill(String(step.data ?? ""), step.actionOptions as any);
         break;
       case "type":
-        if (locator) await locator.type(String(step.data ?? ""));
+        if (locator) await locator.type(String(step.data ?? ""), step.actionOptions as any);
         break;
       case "click":
-        if (locator) await locator.click();
+        if (locator) await locator.click(step.actionOptions as any);
         break;
       case "hover":
-        if (locator) await locator.hover();
+        if (locator) await locator.hover(step.actionOptions as any);
         break;
       case "press":
-        if (locator) await locator.press(String(step.data ?? ""));
+        if (locator) await locator.press(String(step.data ?? ""), step.actionOptions as any);
         break;
       case "waitForTimeout":
         if (step.waitTime) await this.page.waitForTimeout(step.waitTime);
