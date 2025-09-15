@@ -45,19 +45,29 @@ export class ActionExecutor {
       const count = await locator.count();
       for (let i = 0; i < count; i++) {
         const nthLocator = locator.nth(i);
+        // Execute action for this iteration
         await this._executeAction(step, nthLocator, context);
+        // Apply wait time per iteration if provided
+        if (step.waitTime) {
+          await this.page.waitForTimeout(step.waitTime);
+        }
+        // Execute validations for this iteration (use the iteration-specific locator)
+        if (step.validations) {
+          for (const validation of step.validations) {
+            await this.executeValidation(validation, { locator: nthLocator, context });
+          }
+        }
       }
     } else {
+      // Non-iterative path: single action, optional wait, then validations once
       await this._executeAction(step, locator, context);
-    }
-
-    if (step.waitTime) {
-      await this.page.waitForTimeout(step.waitTime);
-    }
-
-    if (step.validations) {
-      for (const validation of step.validations) {
-        await this.executeValidation(validation, { locator, context });
+      if (step.waitTime) {
+        await this.page.waitForTimeout(step.waitTime);
+      }
+      if (step.validations) {
+        for (const validation of step.validations) {
+          await this.executeValidation(validation, { locator, context });
+        }
       }
     }
   }

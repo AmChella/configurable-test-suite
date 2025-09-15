@@ -50,6 +50,8 @@ export interface TestStep {
   resolveFrom?: "cwd" | "none";
   // If true, clears existing selected files before setting new ones
   clearFirst?: boolean;
+  // If true, iterate over all matching elements for the selector, executing action/validation per match
+  iterate?: boolean;
 }
 
 export interface TestConfig {
@@ -115,14 +117,6 @@ function normalizeAndPrepare(input: TestConfig[]): TestConfig[] {
     if (config.enabled === false) continue; // skip disabled
     // default enabled if missing
     (config as any).enabled = config.enabled ?? true;
-    // token replacement for goto
-    // for (const step of config.testSteps || []) {
-    //   if (step.path && typeof step.path === "string" && step.action === "goto") {
-    //     if (TOKEN) {
-    //       step.path = step.path.replace("${TOKEN}", TOKEN);
-    //     }
-    //   }
-    // }
     prepared.push(config);
   }
   prepared.sort((a, b) => {

@@ -8,12 +8,14 @@ export const customLogicMap: Record<string, (page: any, step: any, context: Reco
   "queryResponse": async (page, step, context) => {
     // Example custom logic: Log the step data and context
     const textarea = page.locator(step.data.selector.fillResponse);
+    logger.info(`Filling response in textarea: ${textarea}`, "customLogic.queryResponse");
     if ((await textarea.count()) > 0) {
       await textarea.fill(String(step.data?.responseText ?? ""));
     }
 
     const done = page.locator(step.data.selector.clickDone);
     if ((await done.count()) > 0) {
+      logger.info("Clicking done button", "customLogic.queryResponse");
       await done.click();
     }
   },
