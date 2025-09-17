@@ -20,7 +20,6 @@ export default defineConfig({
   ],
   timeout: 60 * 1000,
   use: {
-    baseURL: process.env.BASE_URL,
     trace: "on-first-retry",
     headless: process.env.HEADLESS === "true" ? true : false,
     launchOptions: {

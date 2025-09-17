@@ -3,8 +3,6 @@ import { loadTestScenarios } from "../../helpers/data-loader";
 import { ActionExecutor } from "../../helpers/action-executor";
 import { logger } from "../../helpers/logger";
 
-// test.use({ baseURL: "https://practicetestautomation.com" });
-
 const scenarios = loadTestScenarios();
 
 for (const scenario of scenarios) {
