@@ -1,0 +1,240 @@
+{
+  "_id": "68ca6ff8ee737e420f291f44",
+  "description": "Demo Test Case",
+  "enabled": true,
+  "product": "Demo",
+  "testOrder": 1,
+  "testSteps": [
+    {
+      "stepName": "Navigate to TodoMVC",
+      "action": "goto",
+      "path": "https://demo.playwright.dev/todomvc/#/",
+      "selector": "https://demo.playwright.dev/todomvc/#/",
+      "selectorType": "css",
+      "data": "",
+      "waitTime": 2000,
+      "iterate": false,
+      "customName": "",
+      "soft": false,
+      "validations": [
+        {
+          "type": "toHaveText",
+          "selector": "body > div:nth-child(1)",
+          "selectorType": "css",
+          "path": "",
+          "data": "This is just a demo of TodoMVC for testing, not the real TodoMVC app.",
+          "message": "The page should contain \"This is just a demo of TodoMVC for testing, not the  real TodoMVC app.\"",
+          "soft": true,
+          "attribute": "",
+          "cssProperty": ""
+        },
+        {
+          "type": "toHaveText",
+          "selector": ".header > h1:nth-child(1)",
+          "selectorType": "css",
+          "path": "",
+          "data": "todos",
+          "message": "The Page should have content \"todos\"",
+          "soft": true,
+          "attribute": "",
+          "cssProperty": ""
+        },
+        {
+          "type": "toBeVisible",
+          "selector": ".new-todo",
+          "selectorType": "css",
+          "path": "",
+          "data": "",
+          "message": "The Page should have input field",
+          "soft": true,
+          "attribute": "",
+          "cssProperty": ""
+        }
+      ]
+    },
+    {
+      "stepName": "Create a todo ",
+      "action": "type",
+      "path": ".new-todo",
+      "selector": ".new-todo",
+      "selectorType": "css",
+      "data": "Prepare a optimistic resume",
+      "waitTime": 200,
+      "iterate": false,
+      "customName": "",
+      "soft": true,
+      "validations": []
+    },
+    {
+      "stepName": "Adding the list todo list",
+      "action": "press",
+      "path": ".new-todo",
+      "selector": ".new-todo",
+      "selectorType": "css",
+      "data": "Enter",
+      "waitTime": 2000,
+      "iterate": true,
+      "customName": "",
+      "soft": true,
+      "validations": [
+        {
+          "type": "toBeVisible",
+          "selector": ".todo-list > li:nth-child(1) > div:nth-child(1) > label:nth-child(2)",
+          "selectorType": "css",
+          "path": "",
+          "data": "",
+          "message": "The label should be added",
+          "soft": true,
+          "attribute": "",
+          "cssProperty": ""
+        },
+        {
+          "type": "toBeVisible",
+          "selector": ".todo-list > li:nth-child(1) > div:nth-child(1) > input:nth-child(1)",
+          "selectorType": "css",
+          "path": "",
+          "data": "",
+          "message": "The checkbox should be display before the label",
+          "soft": true,
+          "attribute": "",
+          "cssProperty": ""
+        },
+        {
+          "type": "toHaveText",
+          "selector": ".view > label:nth-child(2)",
+          "selectorType": "css",
+          "path": "",
+          "data": "Prepare a optimistic resume",
+          "message": "The label should have text which we added",
+          "soft": true,
+          "attribute": "",
+          "cssProperty": ""
+        }
+      ]
+    },
+    {
+      "stepName": "Create a todo ",
+      "action": "type",
+      "path": ".new-todo",
+      "selector": ".new-todo",
+      "selectorType": "css",
+      "data": "Review the resume with AI",
+      "waitTime": 200,
+      "iterate": false,
+      "customName": "",
+      "soft": true,
+      "validations": []
+    },
+    {
+      "stepName": "Adding the list todo list",
+      "action": "press",
+      "path": ".new-todo",
+      "selector": ".new-todo",
+      "selectorType": "css",
+      "data": "Enter",
+      "waitTime": 2000,
+      "iterate": true,
+      "customName": "",
+      "soft": true,
+      "validations": [
+        {
+          "type": "toBeVisible",
+          "selector": ".todo-list > li:nth-child(2) > div:nth-child(1) > label:nth-child(2)",
+          "selectorType": "css",
+          "path": "",
+          "data": "",
+          "message": "The label should be added",
+          "soft": true,
+          "attribute": "",
+          "cssProperty": ""
+        },
+        {
+          "type": "toBeVisible",
+          "selector": ".todo-list > li:nth-child(2) > div:nth-child(1) > input:nth-child(1)",
+          "selectorType": "css",
+          "path": "",
+          "data": "",
+          "message": "The checkbox should be display before the label",
+          "soft": true,
+          "attribute": "",
+          "cssProperty": ""
+        },
+        {
+          "type": "toHaveText",
+          "selector": ".todo-list > li:nth-child(2) > div:nth-child(1) > label:nth-child(2)",
+          "selectorType": "css",
+          "path": "",
+          "data": "Review the resume with AI",
+          "message": "The label should have text which we added",
+          "soft": true,
+          "attribute": "",
+          "cssProperty": ""
+        }
+      ]
+    },
+    {
+      "stepName": "Complete the todo",
+      "action": "click",
+      "path": ".todo-list > li:nth-child(1) > div:nth-child(1) > input:nth-child(1)",
+      "selector": ".todo-list > li:nth-child(1) > div:nth-child(1) > input:nth-child(1)",
+      "selectorType": "css",
+      "data": "",
+      "waitTime": 2000,
+      "iterate": false,
+      "customName": "",
+      "soft": true,
+      "validations": [
+        {
+          "type": "toHaveCSS",
+          "selector": ".completed > div:nth-child(1) > label:nth-child(2)",
+          "selectorType": "css",
+          "path": "",
+          "data": "line-through rgb(217, 217, 217)",
+          "message": "The item should be strike-through",
+          "soft": false,
+          "attribute": "",
+          "cssProperty": "text-decoration"
+        }
+      ]
+    },
+    {
+      "stepName": "Check the item is found in the completed item",
+      "action": "click",
+      "path": ".filters > li:nth-child(3) > a:nth-child(1)",
+      "selector": ".filters > li:nth-child(3) > a:nth-child(1)",
+      "selectorType": "css",
+      "data": "",
+      "waitTime": 0,
+      "iterate": false,
+      "customName": "",
+      "soft": true,
+      "validations": [
+        {
+          "type": "toBeVisible",
+          "selector": ".view > label:nth-child(2)",
+          "selectorType": "css",
+          "path": "",
+          "data": "",
+          "message": "The item should be found",
+          "soft": false,
+          "attribute": "",
+          "cssProperty": ""
+        },
+        {
+          "type": "toHaveText",
+          "selector": ".view > label:nth-child(2)",
+          "selectorType": "css",
+          "path": "",
+          "data": "Prepare a optimistic resume",
+          "message": "The exact item should be found on the completed section",
+          "soft": false,
+          "attribute": "",
+          "cssProperty": ""
+        }
+      ]
+    }
+  ],
+  "createdAt": "2025-09-17T08:23:20.162Z",
+  "updatedAt": "2025-09-17T09:22:21.567Z",
+  "__v": 0
+}
