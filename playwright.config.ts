@@ -18,7 +18,7 @@ export default defineConfig({
     ["allure-playwright"],
     ["./reporters/json-steps-reporter.ts"],
   ],
-  timeout: 60 * 1000,
+  timeout: 60 * 1000 * 2,
   use: {
     trace: "on-first-retry",
     headless: process.env.HEADLESS === "true" ? true : false,

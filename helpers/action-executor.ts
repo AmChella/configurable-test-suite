@@ -161,7 +161,7 @@ export class ActionExecutor {
           throw new Error(`Custom action '${(step as any).customName}' not found in customLogicMap.`);
         }
         // @ts-ignore allow customName from JSON
-        await customLogicMap[(step as any).customName](this.page, step, context);
+        await customLogicMap[(step as any).customName](this.page, step, context, locator);
         break;
       default:
         throw new Error(`Unsupported action: ${step.action}`);
@@ -237,7 +237,12 @@ export class ActionExecutor {
         if (!name || !customValidationMap[name]) {
           throw new Error(`Custom validation '${name}' not found in customValidationMap.`);
         }
-        await customValidationMap[name](this.page as any, validation as any, { locator, expect: currentExpect, ...(extras.context || {}) });
+        await customValidationMap[name](
+          this.page as any,
+          validation as any,
+          { locator, expect: currentExpect, ...(extras.context || {}) },
+          locator as any
+        );
         break;
       }
       default:

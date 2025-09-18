@@ -1,0 +1,121 @@
+{
+  "_id": "68cc0758e60c7fd50de0f039",
+  "description": "Wikipedia TestCase",
+  "enabled": true,
+  "product": "Demo",
+  "testOrder": 2,
+  "testSteps": [
+    {
+      "stepName": "Navitage to Wikipedia Page",
+      "action": "goto",
+      "path": "https://www.wikipedia.org/",
+      "selector": "https://www.wikipedia.org/",
+      "selectorType": "css",
+      "data": "",
+      "waitTime": 2000,
+      "iterate": false,
+      "customName": "",
+      "soft": false,
+      "validations": [
+        {
+          "type": "toHaveTitle",
+          "selector": "title",
+          "selectorType": "css",
+          "path": "",
+          "data": "Wikipedia",
+          "message": "The title should have the text \"Wikipedia\"",
+          "soft": true,
+          "attribute": "",
+          "cssProperty": ""
+        },
+        {
+          "type": "toHaveText",
+          "selector": ".localized-slogan",
+          "selectorType": "css",
+          "path": "",
+          "data": "The Free Encyclopedia",
+          "message": "The data test should be found",
+          "soft": true,
+          "attribute": "",
+          "cssProperty": ""
+        },
+        {
+          "type": "toBeVisible",
+          "selector": "searchInput",
+          "selectorType": "id",
+          "path": "",
+          "data": "",
+          "message": "The search bar should be found",
+          "soft": true,
+          "attribute": "",
+          "cssProperty": ""
+        }
+      ]
+    },
+    {
+      "stepName": "Type a search Context",
+      "action": "type",
+      "path": "searchInput",
+      "selector": "searchInput",
+      "selectorType": "id",
+      "data": "Generative AI",
+      "waitTime": 2000,
+      "iterate": false,
+      "customName": "",
+      "soft": false,
+      "validations": []
+    },
+    {
+      "stepName": "Search",
+      "action": "press",
+      "path": "searchInput",
+      "selector": "searchInput",
+      "selectorType": "id",
+      "data": "Enter",
+      "waitTime": 2000,
+      "iterate": false,
+      "customName": "",
+      "soft": false,
+      "validations": [
+        {
+          "type": "toHaveURL",
+          "selector": "",
+          "selectorType": "css",
+          "path": "https://en.wikipedia.org/wiki/Generative_artificial_intelligence",
+          "data": "",
+          "message": "The should be navigated",
+          "soft": true,
+          "attribute": "",
+          "cssProperty": ""
+        },
+        {
+          "type": "toHaveTitle",
+          "selector": "title",
+          "selectorType": "css",
+          "path": "",
+          "data": "Generative artificial intelligence - Wikipedia",
+          "message": "The message should have title as mentioned",
+          "soft": true,
+          "attribute": "",
+          "cssProperty": ""
+        }
+      ]
+    },
+    {
+      "stepName": "Select a word",
+      "action": "custom",
+      "path": ".mw-content-ltr > p",
+      "selector": ".mw-content-ltr > p",
+      "selectorType": "css",
+      "data": "product",
+      "waitTime": 2000,
+      "iterate": true,
+      "customName": "format",
+      "soft": false,
+      "validations": []
+    }
+  ],
+  "createdAt": "2025-09-18T13:21:28.015Z",
+  "updatedAt": "2025-09-18T13:30:06.767Z",
+  "__v": 0
+}

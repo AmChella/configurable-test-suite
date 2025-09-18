@@ -1,16 +1,18 @@
+import e from "express";
 import { logger } from "./logger";
 export const selectWord = async (
   page,
   step,
   context,
+  word,
+  element,
   selectionType = "random"
 ) => {
   logger.info("Executing custom logic 'selectWord'", "customLogic.selectWord");
-  if (!step.data || !step.data.word) {
-    throw new Error("Step data must include a 'word' property.");
+  if (!word) {
+    throw new Error("Arg 'word' is empty.");
   }
   const {
-    word,
     selector,
     nth = 0,
     mode = "mouse", // mouse | keyboard | auto
@@ -31,17 +33,20 @@ export const selectWord = async (
       word,
       selector,
       nth,
+      element,
     }: {
       word: string;
       selector?: string;
       nth: number;
+      element: any;
     }) => {
       function findRangeForWord(
         root: Element | Document,
         word: string,
-        nth: number
+        nth: number,
+        element: any
       ): Range | null {
-        const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+        const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
         const range = document.createRange();
         let count = 0;
         let node: Node | null;
@@ -62,11 +67,11 @@ export const selectWord = async (
         }
         return null;
       }
-
+      console.log("word in page.evaluate:", word);
       const root: Element | Document = selector
         ? (document.querySelector(selector) as Element) || document
         : document;
-      const targetRange = findRangeForWord(root, word, nth);
+      const targetRange = findRangeForWord(root, word, nth, element);
       if (!targetRange) return null;
       const rects = targetRange.getClientRects();
       const first = rects[0];
@@ -81,7 +86,7 @@ export const selectWord = async (
         centerY: bounds.top + bounds.height / 2,
       };
     },
-    { word, selector, nth } as { word: string; selector?: string; nth: number }
+    { word, selector, nth, element } as { word: string; selector?: string; nth: number; element: any }
   );
 
   if (!box) {
@@ -125,4 +130,43 @@ export const selectWord = async (
       await page.keyboard.press("Shift+ArrowRight");
     }
   }
+};
+
+export const readTextNodes = async (
+  element: any,
+  excludedTags: string[] = []
+): Promise<string[]> => {
+  const elementHandle = await element.elementHandle();
+  if (elementHandle) {
+     return await elementHandle.evaluate(
+        (el: HTMLElement, excluded: string[]) => {
+          const EXCLUDED_TAGS: string[] = [
+            ...excluded.map((tag: string) => tag.toUpperCase()),
+          ];
+          function getTextNodes(node: Node): string[] {
+            const nodes: string[] = [];
+            for (const child of Array.from(node.childNodes) as Node[]) {
+              if (child.nodeType === Node.TEXT_NODE) {
+                const textChild = child as Text;
+                if (textChild.textContent && textChild.textContent.trim()) {
+                  const parent = textChild.parentElement as HTMLElement | null;
+                  if (!(parent && EXCLUDED_TAGS.includes(parent.tagName))) {
+                    nodes.push(textChild.textContent.trim());
+                  }
+                }
+              } else if (
+                child.nodeType === Node.ELEMENT_NODE &&
+                !EXCLUDED_TAGS.includes((child as HTMLElement).tagName)
+              ) {
+                nodes.push(...getTextNodes(child));
+              }
+            }
+            return nodes;
+          }
+          return getTextNodes(el);
+        },
+        excludedTags
+      );
+  }
+  return [];
 };
