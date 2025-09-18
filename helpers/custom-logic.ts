@@ -19,7 +19,7 @@ export const customLogicMap: Record<string, (page: any, step: any, context: Reco
       await done.click();
     }
   },
-  "selectWord": async (page, step, context) => {
+  "selectWord": async (page, step, context, selectionType = "random") => {
     logger.info("Executing custom logic 'selectWord'", "customLogic.selectWord");
     if (!step.data || !step.data.word) {
       throw new Error("Step data must include a 'word' property.");

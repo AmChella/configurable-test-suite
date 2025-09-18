@@ -123,7 +123,22 @@ export class ActionExecutor {
         break;
       }
       case "fill":
-        if (locator) await locator.fill(String(step.data ?? ""), step.actionOptions as any);
+        if (locator) {
+          const elementType = await locator.evaluate(el => el.tagName);
+          if (['INPUT', 'TEXTAREA', 'SELECT'].includes(elementType) || (await locator.getAttribute('contenteditable') === 'true')) {
+            await locator.fill(String(step.data ?? ""), step.actionOptions as any);
+          } else {
+            // If it's not a direct input, try to click it and then find an input within it.
+            // This is a common pattern for search boxes that expand.
+            await locator.click();
+            const inputWithin = locator.locator('input, textarea, [contenteditable="true"]').first();
+            if (await inputWithin.isVisible()) {
+              await inputWithin.fill(String(step.data ?? ""), step.actionOptions as any);
+            } else {
+              throw new Error(`Cannot fill non-input element and no fillable input found after clicking: ${elementType}`);
+            }
+          }
+        }
         break;
       case "type":
         if (locator) await locator.type(String(step.data ?? ""), step.actionOptions as any);
