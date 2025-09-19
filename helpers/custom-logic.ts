@@ -1,16 +1,27 @@
-import { get } from "http";
+import { expect } from "allure-playwright";
 import { logger } from "./logger";
-import { readTextNodes, selectWord } from "./utility";
+import { isWrappedByGivenTag, readTextNodes, selectWord } from "./utility";
 
 // Custom logic map for ActionExecutor
 // Add your custom functions here. Each function receives (page, step, context)
 // Example: 'myCustomAction': async (page, step, context) => { /* custom logic */ },
-export const customLogicMap: Record<string, (page: any, step: any, context: Record<string, any>, element: any) => Promise<void>> = {
+export const customLogicMap: Record<
+  string,
+  (
+    page: any,
+    step: any,
+    context: Record<string, any>,
+    element: any
+  ) => Promise<void>
+> = {
   // 'myCustomAction': async (page, step, context) => { /* ... */ },
-  "queryResponse": async (page, step, context, element) => {
+  queryResponse: async (page, step, context, element) => {
     // Example custom logic: Log the step data and context
     const textarea = page.locator(step.data.selector.fillResponse);
-    logger.info(`Filling response in textarea: ${textarea}`, "customLogic.queryResponse");
+    logger.info(
+      `Filling response in textarea: ${textarea}`,
+      "customLogic.queryResponse"
+    );
     if ((await textarea.count()) > 0) {
       await textarea.fill(String(step.data?.responseText ?? ""));
     }
@@ -21,21 +32,88 @@ export const customLogicMap: Record<string, (page: any, step: any, context: Reco
       await done.click();
     }
   },
-  "format": async (page, step, context, element, selectionType = "random") => {
+  format: async (page, step, context, element) => {
     logger.info("Executing custom logic 'format'", "customLogic.format");
-    // Get all child nodes, filter out excluded tags and pure text nodes
-    const EXCLUDED_TAGS = ["A"];
-    // Use imported getTextNodes utility directly
-
-    let words: string[] = [];
+    const EXCLUDED_TAGS = ["A"]; // Extendable list of tags to ignore
     try {
-      words = await readTextNodes(element, EXCLUDED_TAGS);
-      words = words.filter((word) => word.trim() !== "");
-      let randomWords = words.sort(() => 0.5 - Math.random()).slice(0, 3);
-      await selectWord(page, step, context, randomWords, element, "specific");
-
+      // Collect raw text node strings excluding certain tags
+      if (step.data.wordSelection === "random") {
+        let nodeTexts: string[] = await readTextNodes(element, EXCLUDED_TAGS);
+        nodeTexts = nodeTexts.filter((t) => t && t.trim());
+        if (!nodeTexts.length) {
+          logger.warn(
+            "No text nodes found to select from",
+            "customLogic.format"
+          );
+          return;
+        }
+        // Split into individual words (tokens) by whitespace
+        const tokenWords = nodeTexts
+          .flatMap((t) => t.split(/\s+/))
+          .filter(Boolean);
+        if (!tokenWords.length) {
+          logger.warn(
+            "No individual words extracted after splitting",
+            "customLogic.format"
+          );
+          return;
+        }
+        // Pick a single random word (the user's request: choose any one word)
+        const chosen =
+          tokenWords[Math.floor(Math.random() * tokenWords.length)];
+        logger.info(`Chosen word: ${chosen}`, "customLogic.format");
+        // Prepare a shallow cloned step with injected word for selectWord logic
+        const stepWithWord = {
+          ...step,
+          data: { ...(step.data || {}), word: chosen },
+        };
+      }
+      else if (step.data.wordSelection === "specific") {
+        if (!step.data.word || typeof step.data.word !== "string") {
+          logger.warn(
+            "Custom format action requires 'data.word' for specific selection",
+            "customLogic.format"
+          );
+          return;
+        }
+        const chosen = step.data.word;
+        logger.info(`Chosen specific word: ${chosen}`, "customLogic.format");
+        const stepWithWord = { ...step }; // no change needed
+      } else {
+        logger.warn(
+          `Unknown wordSelection type: ${step.data.wordSelection}`,
+          "customLogic.format"
+        );
+        return;
+      }
+      // Reuse selectWord helper (expects signature selectWord(page, step, context, selectionType?))
+      await selectWord(
+        page,
+        stepWithWord,
+        context,
+        chosen,
+        element,
+        "specific"
+      );
+      await page.locator(step.data.selector).waitFor({ state: "visible" });
+      await page.locator(step.data.selector).click();
+      // Structural assertion: ensure the chosen word is inside a <strong> or <b> element
+      const isWrapped = await isWrappedByGivenTag(
+        element,
+        chosen,
+        step.data.wrappers
+      );
+      await expect
+        .soft(
+          isWrapped,
+          `Expected word "${chosen}" to be wrapped in <strong>/<b> inside ${element}`
+        )
+        .toBeTruthy();
     } catch (e) {
-      logger.warn(`Failed to get text nodes: ${e}`, "customLogic.format");
+      logger.warn(
+        `Failed to process format action: ${(e as Error).message}`,
+        "customLogic.format"
+      );
     }
   },
 };
@@ -43,7 +121,15 @@ export default customLogicMap;
 
 // Custom validation map for ActionExecutor
 // Each function should throw an Error to fail the validation, or return/resolves if it passes.
-export const customValidationMap: Record<string, (page: any, validation: any, context: Record<string, any>, element: any) => Promise<void>> = {
+export const customValidationMap: Record<
+  string,
+  (
+    page: any,
+    validation: any,
+    context: Record<string, any>,
+    element: any
+  ) => Promise<void>
+> = {
   // Example: Validate that an element (or entire page) contains specific text
   // Usage in JSON:
   // {
@@ -56,7 +142,9 @@ export const customValidationMap: Record<string, (page: any, validation: any, co
   async containsText(page, validation, context) {
     const targetText = String(validation.data ?? "");
     if (!targetText) {
-      throw new Error("Custom validation 'containsText' requires 'data' with expected substring");
+      throw new Error(
+        "Custom validation 'containsText' requires 'data' with expected substring"
+      );
     }
     const loc = validation.selector ? context.locator : undefined;
     let haystack: string | null = null;
@@ -65,14 +153,18 @@ export const customValidationMap: Record<string, (page: any, validation: any, co
         haystack = await loc.textContent();
       } catch (e) {
         // Fallback to innerText if textContent fails
-        haystack = await page.evaluate((el: HTMLElement) => el.innerText, await loc.elementHandle());
+        haystack = await page.evaluate(
+          (el: HTMLElement) => el.innerText,
+          await loc.elementHandle()
+        );
       }
     } else {
       haystack = await page.content();
     }
     haystack = haystack ?? "";
     if (!haystack.includes(targetText)) {
-      const msg = validation.message || `Expected text to include: ${targetText}`;
+      const msg =
+        validation.message || `Expected text to include: ${targetText}`;
       throw new Error(msg);
     }
     // Optionally also use expect if provided

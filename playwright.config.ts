@@ -18,13 +18,12 @@ export default defineConfig({
     ["allure-playwright"],
     ["./reporters/json-steps-reporter.ts"],
   ],
-  timeout: 60 * 1000 * 2,
+  timeout: 60 * 1000 * 6,
   use: {
     trace: "on-first-retry",
     headless: process.env.HEADLESS === "true" ? true : false,
-    launchOptions: {
-      args: ["--start-maximized"],
-    },
+    viewport: null, // allow real window sizing
+    launchOptions: { args: ["--start-maximized"] },
   },
   // projects: [
   //   {

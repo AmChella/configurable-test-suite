@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Contextual Formatting Menu</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        #menu {
+            position: absolute;
+            display: none;
+            background: #fff;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+            padding: 5px;
+            z-index: 1000;
+        }
+
+        #menu button {
+            background: none;
+            border: none;
+            padding: 5px 8px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        #menu button:hover {
+            background: #f0f0f0;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h2>Try Selecting Text</h2>
+    <div id="editor" contenteditable="true"
+        style="border:1px solid #ddd; padding:12px; border-radius:6px; min-height:140px;">
+        <div class="CfCard-module--left--eb5b5">
+            <p>LLMs are excellent foundational tools for building <a href="/generative-ai/">GenAI</a> applications and
+                have made
+                AI more accessible. However, they come with challenges.</p>
+            <p>LLMs are <strong>stochastic by nature</strong> and generally trained on a large corpus of <strong>static
+                    data</strong>. As a result, they lack current domain-specific knowledge. When there is a knowledge
+                gap, LLMs
+                can provide hallucinated answers that are false or misleading despite sounding plausible. For businesses
+                with
+                GenAI applications, <strong>hallucinations</strong> can break customer trust, damage brand reputation,
+                and even
+                create legal issues.</p>
+            <p>LLMs can function as a ‘black box’ with <strong>unclear knowledge fidelity and provenance</strong>, which
+                can
+                lead to potential issues with data quality and trust.</p>
+            <p>RAG architecture addresses these issues by augmenting LLM responses with real-time data, without the high
+                costs
+                of re-training the model. Since LLMs are expensive to run, these costs are often passed on to customers
+                based on
+                the number of tokens processed. By querying a vector database, RAG can provide accurate answers by
+                contextualizing prompts with the most relevant domain-specific information, reducing the number of calls
+                to the
+                LLM. This, in turn, lowers the number of tokens processed, thereby significantly <strong>reducing
+                    costs</strong>. LLMs have limited context windows of ‘attention‘ for each prompt, so this RAG
+                pattern
+                enables use cases that would otherwise be infeasible without filtering out only the most relevant
+                information.
+            </p>
+            <p>RAG architecture can also minimize <strong>privacy concerns</strong> related to sensitive information
+                generated
+                by LLMs. It allows sensitive data to be stored locally while still leveraging the speed of LLMs’
+                generative
+                capabilities. RAG provides an opportunity to filter out private or sensitive data within a model’s
+                knowledge
+                library before sending the prompt to the LLM.</p>
+        </div>
+        <div class="style-module--main--9a12a">
+            <h3 class="style-module--title--14f59">
+                <div>Advantages of RAG over Pre-trained or Fine-tuned LLMs</div>
+            </h3>
+            <div class="style-module--blurb--b1b1e">
+                <div class="CfCard-module--left--eb5b5">
+                    <p>RAG has distinct advantages over pre-trained or fine-tuned LLMs.</p>
+                    <p><strong>Pre-training</strong> involves training an LLM from scratch using a large dataset. While this
+                        allows for extensive customization, it requires significant resources and time investment.</p>
+                    <p><strong>Fine-tuning</strong> adapts pre-trained models to new tasks or domains with specialized datasets.
+                        Although more resource-efficient than pre-training, fine-tuning still demands considerable GPU resources
+                        and can be challenging. It may inadvertently cause the LLM to forget previously learned information or
+                        reduce its proficiency.</p>
+                    <p>RAG, on the other hand, augments publicly available data from LLMs with domain-specific data from the
+                        enterprise. This allows for parsing and inferencing with context at prompt time. Additionally,
+                        post-processing in a RAG system verifies generated responses, minimizing the risk of inaccuracies or
+                        false information from the LLM.</p>
+                    <p>RAG has emerged as a common pattern for GenAI, extending the power of LLMs to domain-specific datasets
+                        without the need for retraining models.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="menu">
+        <button data-cmd="bold" title="Bold"><b>B</b></button>
+        <button data-cmd="italic" title="Italic"><i>I</i></button>
+        <button data-cmd="underline" title="Underline"><u>U</u></button>
+    </div>
+
+    <script>
+        const menu = document.getElementById('menu');
+        const editor = document.getElementById('editor');
+
+        function hasSelection() {
+            const sel = window.getSelection();
+            if (!sel || sel.rangeCount === 0) return false;
+            const range = sel.getRangeAt(0);
+            if (range.collapsed) return false; // purely caret, no selection
+            // Ensure selection start is inside editor
+            return editor.contains(range.startContainer);
+        }
+
+        function positionMenu(forceHideIfNoSelection = true) {
+            if (!hasSelection()) { if (forceHideIfNoSelection) menu.style.display = 'none'; return; }
+            const sel = window.getSelection();
+            const range = sel.getRangeAt(0);
+            let rect = range.getBoundingClientRect();
+            // If zero-sized rect (e.g., spanning inline boundaries) merge client rects
+            if ((rect.width === 0 || rect.height === 0) && range.getClientRects().length) {
+                const r = range.getClientRects()[0];
+                rect = r;
+            }
+            menu.style.left = Math.max(8, rect.left + window.scrollX) + 'px';
+            menu.style.top = Math.max(8, rect.top + window.scrollY - (menu.offsetHeight + 8)) + 'px';
+            menu.style.display = 'block';
+            updateActiveButtons();
+        }
+
+        document.addEventListener('mouseup', () => setTimeout(() => positionMenu(false), 0));
+        document.addEventListener('keyup', (e) => {
+            if (['Shift', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Meta', 'Control', 'Alt'].includes(e.key)) positionMenu(false);
+        });
+        document.addEventListener('selectionchange', () => positionMenu(false));
+        window.addEventListener('scroll', () => { if (menu.style.display === 'block') positionMenu(false); });
+
+        function wrapOrToggle(tagName) {
+            const sel = window.getSelection();
+            if (!hasSelection()) return;
+            const range = sel.getRangeAt(0);
+            // Detect if already within same tag
+            let node = sel.anchorNode;
+            let foundWrapper = null;
+            while (node && node !== editor) {
+                if (node.nodeType === Node.ELEMENT_NODE && node.tagName === tagName) { foundWrapper = node; break; }
+                node = node.parentNode;
+            }
+            if (foundWrapper && foundWrapper.parentNode) {
+                // unwrap
+                const parent = foundWrapper.parentNode;
+                while (foundWrapper.firstChild) parent.insertBefore(foundWrapper.firstChild, foundWrapper);
+                parent.removeChild(foundWrapper);
+                return;
+            }
+            // wrap new
+            try {
+                const wrapper = document.createElement(tagName.toLowerCase());
+                range.surroundContents(wrapper);
+            } catch {
+                // Fallback: extract & reinsert
+                const contents = range.extractContents();
+                const wrapper = document.createElement(tagName.toLowerCase());
+                wrapper.appendChild(contents);
+                range.insertNode(wrapper);
+            }
+        }
+
+        function applyFormat(cmd) {
+            if (cmd === 'bold') wrapOrToggle('STRONG');
+            else if (cmd === 'italic') wrapOrToggle('EM');
+            else if (cmd === 'underline') wrapOrToggle('U');
+            // Reposition & keep menu visible if selection still exists
+            setTimeout(() => { positionMenu(); }, 0);
+        }
+
+        menu.addEventListener('click', (e) => {
+            const target = e.target;
+            const btn = target && target.closest ? target.closest('button[data-cmd]') : null;
+            if (!btn) return;
+            const cmd = btn.getAttribute('data-cmd');
+            applyFormat(cmd);
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!menu.contains(e.target) && !hasSelection()) menu.style.display = 'none';
+        });
+
+        function updateActiveButtons() {
+            const sel = window.getSelection();
+            if (!sel || sel.rangeCount === 0) return;
+            const anchor = sel.anchorNode;
+            const pathTags = new Set();
+            let node = anchor instanceof HTMLElement ? anchor : anchor.parentElement;
+            while (node && node !== editor) {
+                pathTags.add(node.tagName);
+                node = node.parentElement;
+            }
+            menu.querySelectorAll('button[data-cmd]').forEach(btn => {
+                const cmd = btn.getAttribute('data-cmd');
+                let active = false;
+                if (cmd === 'bold') active = pathTags.has('STRONG') || pathTags.has('B');
+                else if (cmd === 'italic') active = pathTags.has('EM') || pathTags.has('I');
+                else if (cmd === 'underline') active = pathTags.has('U');
+                btn.classList.toggle('active', !!active);
+            });
+        }
+
+        // Initial style for active state
+        const style = document.createElement('style');
+        style.textContent = '#menu button.active{background:#333;color:#fff;}';
+        document.head.appendChild(style);
+    </script>
+
+</body>
+
+</html>

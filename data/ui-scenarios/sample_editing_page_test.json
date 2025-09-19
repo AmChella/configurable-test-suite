@@ -1,0 +1,65 @@
+{
+  "_id": "68cd2448bc900e2deeea3724",
+  "description": "Sample Editing Page Test ",
+  "enabled": true,
+  "product": "Demo",
+  "testOrder": 3,
+  "testSteps": [
+    {
+      "stepName": "Navigate to page",
+      "action": "goto",
+      "path": "http://localhost:4001/sample-ui",
+      "selector": "http://localhost:4001/sample-ui",
+      "selectorType": "css",
+      "data": "",
+      "waitTime": 2000,
+      "iterate": false,
+      "customName": "",
+      "soft": false,
+      "validations": [
+        {
+          "type": "toBeVisible",
+          "selector": "body > h2",
+          "selectorType": "css",
+          "path": "",
+          "data": "",
+          "message": "the selector to be visible",
+          "soft": false,
+          "attribute": "",
+          "cssProperty": ""
+        },
+        {
+          "type": "toHaveText",
+          "selector": "body > h2",
+          "selectorType": "css",
+          "path": "",
+          "data": "Try Selecting Text",
+          "message": "The page should have a text as mentioned in data",
+          "soft": false,
+          "attribute": "",
+          "cssProperty": ""
+        }
+      ]
+    },
+    {
+      "stepName": "Select word",
+      "action": "custom",
+      "path": "#editor > div:nth-child(1) > p",
+      "selector": "#editor > div:nth-child(1) > p",
+      "selectorType": "css",
+      "data": {
+        "formattingType": "bold",
+        "selector": "#menu > button[title=\"Bold\"]",
+        "wrappers": ["strong", "b"]
+      },
+      "waitTime": 2000,
+      "iterate": true,
+      "customName": "format",
+      "soft": false,
+      "validations": []
+    }
+  ],
+  "createdAt": "2025-09-19T09:37:12.753Z",
+  "updatedAt": "2025-09-19T12:02:09.647Z",
+  "__v": 0
+}

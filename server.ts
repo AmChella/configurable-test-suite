@@ -256,6 +256,13 @@ function collectHttpContext(runStart: number) {
   return httpContext;
 }
 
+// Sample UI for interactive testing
+app.use("/sample", express.static(path.resolve(process.cwd(), "sample")));
+
+app.get("/sample-ui", (req, res) => {
+  res.sendFile(path.resolve(process.cwd(), "sample", "editor.html"));
+});
+
 // Query API for reports
 app.get("/reports", async (req: Request, res: Response) => {
   try {
