@@ -50,7 +50,11 @@
       "data": {
         "formattingType": "bold",
         "selector": "#menu > button[title=\"Bold\"]",
-        "wrappers": ["strong", "b"]
+        "wrappers": [
+          "strong",
+          "b"
+        ],
+        "wordSelection": "random"
       },
       "waitTime": 2000,
       "iterate": true,
@@ -60,6 +64,6 @@
     }
   ],
   "createdAt": "2025-09-19T09:37:12.753Z",
-  "updatedAt": "2025-09-19T12:02:09.647Z",
+  "updatedAt": "2025-09-20T10:28:11.298Z",
   "__v": 0
 }

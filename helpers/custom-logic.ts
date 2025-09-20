@@ -37,6 +37,8 @@ export const customLogicMap: Record<
     const EXCLUDED_TAGS = ["A"]; // Extendable list of tags to ignore
     try {
       // Collect raw text node strings excluding certain tags
+      let chosen: string | undefined;
+      let stepWithWord: any = step;
       if (step.data.wordSelection === "random") {
         let nodeTexts: string[] = await readTextNodes(element, EXCLUDED_TAGS);
         nodeTexts = nodeTexts.filter((t) => t && t.trim());
@@ -59,16 +61,14 @@ export const customLogicMap: Record<
           return;
         }
         // Pick a single random word (the user's request: choose any one word)
-        const chosen =
-          tokenWords[Math.floor(Math.random() * tokenWords.length)];
+        chosen = tokenWords[Math.floor(Math.random() * tokenWords.length)];
         logger.info(`Chosen word: ${chosen}`, "customLogic.format");
         // Prepare a shallow cloned step with injected word for selectWord logic
-        const stepWithWord = {
+        stepWithWord = {
           ...step,
           data: { ...(step.data || {}), word: chosen },
         };
-      }
-      else if (step.data.wordSelection === "specific") {
+      } else if (step.data.wordSelection === "specific") {
         if (!step.data.word || typeof step.data.word !== "string") {
           logger.warn(
             "Custom format action requires 'data.word' for specific selection",
@@ -76,12 +76,19 @@ export const customLogicMap: Record<
           );
           return;
         }
-        const chosen = step.data.word;
+        chosen = step.data.word;
         logger.info(`Chosen specific word: ${chosen}`, "customLogic.format");
-        const stepWithWord = { ...step }; // no change needed
+        stepWithWord = { ...step }; // no change needed
       } else {
         logger.warn(
           `Unknown wordSelection type: ${step.data.wordSelection}`,
+          "customLogic.format"
+        );
+        return;
+      }
+      if (!chosen) {
+        logger.warn(
+          "No word chosen during format action",
           "customLogic.format"
         );
         return;
