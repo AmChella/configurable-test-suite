@@ -1,0 +1,148 @@
+{
+  "_id": "iterative-group-example",
+  "description": "Iterative Group Example - Process Multiple Items",
+  "enabled": true,
+  "product": "Demo",
+  "testOrder": 10,
+  "testSteps": [
+    {
+      "stepName": "Navigate to page",
+      "action": "goto",
+      "path": "https://demo.playwright.dev/todomvc/#/",
+      "waitTime": 2000,
+      "iterate": false,
+      "validations": [
+        {
+          "type": "toBeVisible",
+          "selector": ".new-todo",
+          "selectorType": "css",
+          "data": "",
+          "message": "The input field should be visible",
+          "soft": false
+        }
+      ]
+    },
+    {
+      "stepName": "Add first todo",
+      "action": "fill",
+      "selector": ".new-todo",
+      "selectorType": "css",
+      "data": "First todo item",
+      "waitTime": 500
+    },
+    {
+      "stepName": "Press Enter to add first todo",
+      "action": "press",
+      "selector": ".new-todo",
+      "selectorType": "css",
+      "data": "Enter",
+      "waitTime": 1000
+    },
+    {
+      "stepName": "Add second todo",
+      "action": "fill",
+      "selector": ".new-todo",
+      "selectorType": "css",
+      "data": "Second todo item",
+      "waitTime": 500
+    },
+    {
+      "stepName": "Press Enter to add second todo",
+      "action": "press",
+      "selector": ".new-todo",
+      "selectorType": "css",
+      "data": "Enter",
+      "waitTime": 1000
+    },
+    {
+      "stepName": "Add third todo",
+      "action": "fill",
+      "selector": ".new-todo",
+      "selectorType": "css",
+      "data": "Third todo item",
+      "waitTime": 500
+    },
+    {
+      "stepName": "Press Enter to add third todo",
+      "action": "press",
+      "selector": ".new-todo",
+      "selectorType": "css",
+      "data": "Enter",
+      "waitTime": 1000
+    },
+    {
+      "stepName": "Hover over todo item",
+      "action": "hover",
+      "selector": ".todo-list li",
+      "selectorType": "css",
+      "data": "",
+      "waitTime": 500,
+      "iterativeGroup": "process-todos",
+      "validations": [
+        {
+          "type": "toBeVisible",
+          "selector": ".todo-list li .view",
+          "selectorType": "css",
+          "data": "",
+          "message": "Todo item should be visible",
+          "soft": false
+        }
+      ]
+    },
+    {
+      "stepName": "Click checkbox to complete todo",
+      "action": "click",
+      "selector": ".todo-list li input[type=\"checkbox\"]",
+      "selectorType": "css",
+      "data": "",
+      "waitTime": 1000,
+      "iterativeGroup": "process-todos",
+      "validations": [
+        {
+          "type": "toHaveClass",
+          "selector": ".todo-list li",
+          "selectorType": "css",
+          "data": "completed",
+          "message": "Todo item should have completed class",
+          "soft": false
+        }
+      ]
+    },
+    {
+      "stepName": "Verify completion status",
+      "action": "waitForTimeout",
+      "waitTime": 500,
+      "iterativeGroup": "process-todos",
+      "validations": [
+        {
+          "type": "toHaveCSS",
+          "selector": ".todo-list li.completed .view label",
+          "selectorType": "css",
+          "data": "line-through",
+          "cssProperty": "text-decoration-line",
+          "message": "Completed todo should be struck through",
+          "soft": false
+        }
+      ]
+    },
+    {
+      "stepName": "Final verification",
+      "action": "waitForTimeout",
+      "waitTime": 1000,
+      "validations": [
+        {
+          "type": "toBeVisible",
+          "selector": ".completed",
+          "selectorType": "css",
+          "nth": 0,
+          "data": "",
+          "message": "At least one completed item should be visible",
+          "soft": false
+        }
+      ]
+    }
+  ],
+  "createdAt": "2025-09-22T00:00:00.000Z",
+  "updatedAt": "2025-09-22T00:00:00.000Z",
+  "__v": 0
+}

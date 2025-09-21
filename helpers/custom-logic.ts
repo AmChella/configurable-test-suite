@@ -15,6 +15,17 @@ export const customLogicMap: Record<
   ) => Promise<void>
 > = {
   // 'myCustomAction': async (page, step, context) => { /* ... */ },
+  addMultipleTodos: async (page, step, context, element) => {
+    // Add multiple todos from the data array
+    const todos = Array.isArray(step.data) ? step.data : [step.data];
+    logger.info(`Adding ${todos.length} todos: ${todos.join(', ')}`, "customLogic.addMultipleTodos");
+    
+    for (const todoText of todos) {
+      await page.locator('.new-todo').fill(String(todoText));
+      await page.locator('.new-todo').press('Enter');
+      await page.waitForTimeout(500); // Small delay between todos
+    }
+  },
   queryResponse: async (page, step, context, element) => {
     // Example custom logic: Log the step data and context
     const textarea = page.locator(step.data.selector.fillResponse);

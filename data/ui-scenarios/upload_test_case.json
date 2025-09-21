@@ -1,0 +1,59 @@
+{
+  "_id": "upload-test-case",
+  "description": "Upload Test Case",
+  "enabled": true,
+  "product": "Demo",
+  "testOrder": 15,
+  "testSteps": [
+    {
+      "stepName": "Navigate to Upload Page",
+      "action": "goto",
+      "path": "http://localhost:4001/sample/upload.html",
+      "waitTime": 1000,
+      "validations": [
+        {"type": "toBeVisible", "selector": "#title", "selectorType": "css", "message": "Title should be visible"}
+      ]
+    },
+    {
+      "stepName": "Upload single file via files array",
+      "action": "upload",
+      "selector": "#fileInput",
+      "selectorType": "css",
+      "files": [
+        {"path": "data/upload/sample-upload.txt"}
+      ],
+      "waitTime": 500,
+      "validations": [
+        {"type": "toContainText", "selector": "#fileInfo", "selectorType": "css", "data": "sample-upload.txt", "message": "File name should appear"}
+      ]
+    },
+    {
+      "stepName": "Upload multiple files via data array",
+      "action": "upload",
+      "selector": "#fileInput",
+      "selectorType": "css",
+      "data": ["data/upload/sample-upload.txt", "data/upload/another-file.md"],
+      "waitTime": 500,
+      "clearFirst": true,
+      "validations": [
+        {"type": "toContainText", "selector": "#fileInfo", "selectorType": "css", "data": "another-file.md", "message": "Second file name should appear"}
+      ]
+    },
+    {
+      "stepName": "Upload virtual file from base64",
+      "action": "upload",
+      "selector": "#fileInput",
+      "selectorType": "css",
+      "files": [
+        {"name": "virtual.txt", "mimeType": "text/plain", "contentBase64": "VGhpcyBpcyBhIHZpcnR1YWwgZmlsZSBjb250ZW50Lg=="}
+      ],
+      "waitTime": 500,
+      "clearFirst": true,
+      "validations": [
+        {"type": "toContainText", "selector": "#fileInfo", "selectorType": "css", "data": "virtual.txt", "message": "Virtual file name should appear"}
+      ]
+    }
+  ],
+  "createdAt": "2025-09-22T00:00:00.000Z",
+  "updatedAt": "2025-09-22T00:00:00.000Z"
+}

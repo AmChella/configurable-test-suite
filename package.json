@@ -7,7 +7,9 @@
     "build": "tsc -p tsconfig.json",
     "test": "npx playwright test",
     "serve": "ts-node server.ts",
+    "start": "npm run serve",
     "serve:build": "node dist/server.js",
+  "test:upload": "node scripts/run-upload-scenario.js",
     "allure:generate": "allure generate ./allure-results --clean -o ./allure-report || true",
     "allure:open": "allure open ./allure-report"
   },

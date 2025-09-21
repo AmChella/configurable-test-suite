@@ -1,0 +1,96 @@
+{
+  "_id": "68c9384f92d818742dc366ef",
+  "description": "Test Wikipedia",
+  "enabled": true,
+  "testOrder": 3,
+  "testSteps": [
+    {
+      "stepName": "Navigate to wikipedia",
+      "action": "goto",
+      "path": "https://www.wikipedia.org/",
+      "selector": "https://www.wikipedia.org/",
+      "selectorType": "css",
+      "data": "",
+      "waitTime": 2000,
+      "iterate": false,
+      "customName": "",
+      "soft": false,
+      "validations": [
+        {
+          "type": "toBeVisible",
+          "selector": "search-input",
+          "selectorType": "id",
+          "path": "",
+          "data": "",
+          "message": "Input field to be visible",
+          "soft": true,
+          "attribute": "",
+          "cssProperty": ""
+        },
+        {
+          "type": "toHaveText",
+          "selector": "#www-wikipedia-org > main > div.central-textlogo > h1 > span",
+          "selectorType": "css",
+          "path": "",
+          "data": "Wikipedia",
+          "message": "The page should contain \"Wikipedia\" word",
+          "soft": true,
+          "attribute": "",
+          "cssProperty": ""
+        }
+      ]
+    },
+    {
+      "stepName": "Search Generative AI",
+      "action": "fill",
+      "path": "search-input",
+      "selector": "search-input",
+      "selectorType": "id",
+      "data": "Generative AI",
+      "waitTime": 20000,
+      "iterate": false,
+      "customName": "",
+      "soft": false,
+      "validations": []
+    },
+    {
+      "stepName": "Search",
+      "action": "click",
+      "path": "#search-form > fieldset > button",
+      "selector": "#search-form > fieldset > button",
+      "selectorType": "css",
+      "data": "",
+      "waitTime": 2000,
+      "iterate": false,
+      "customName": "",
+      "soft": false,
+      "validations": [
+        {
+          "type": "toHaveURL",
+          "selector": "Checking Url",
+          "selectorType": "css",
+          "path": "https://en.wikipedia.org/wiki/Generative_artificial_intelligence",
+          "data": "",
+          "message": "The url should be https://en.wikipedia.org/wiki/Generative_artificial_intelligence",
+          "soft": false,
+          "attribute": "",
+          "cssProperty": ""
+        },
+        {
+          "type": "toHaveText",
+          "selector": "#firstHeading > span",
+          "selectorType": "css",
+          "path": "",
+          "data": "Generative artificial intelligence",
+          "message": "The page shouls contain \"Generative artificial intelligence\"",
+          "soft": false,
+          "attribute": "",
+          "cssProperty": ""
+        }
+      ]
+    }
+  ],
+  "createdAt": "2025-09-16T10:13:35.990Z",
+  "updatedAt": "2025-09-16T11:18:29.564Z",
+  "__v": 0
+}

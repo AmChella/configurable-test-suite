@@ -9,13 +9,9 @@ for (const scenario of scenarios) {
   test.describe(scenario.description, () => {
     test(`Run scenario: ${scenario.description}`, async ({ page }) => {
       const executor = new ActionExecutor(page);
-
-      for (const step of scenario.testSteps) {
-        await test.step(step.stepName, async () => {
-          logger.info(`Executing step: ${step.stepName}`, "runner");
-          await executor.executeStep(step);
-        });
-      }
+      
+      // Use executeSteps to handle both normal steps and iterative groups
+      await executor.executeSteps(scenario.testSteps);
     });
   });
 }

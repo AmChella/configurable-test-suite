@@ -52,6 +52,13 @@ export interface TestStep {
   clearFirst?: boolean;
   // If true, iterate over all matching elements for the selector, executing action/validation per match
   iterate?: boolean;
+  // Optional: group ID for iterative step execution - steps with same ID execute as a group,
+  // where first step's selector determines iteration count for all steps in the group
+  iterativeGroup?: string;
+  // Optional: custom action name for custom logic execution
+  customName?: string;
+  // Optional: soft assertion flag
+  soft?: boolean;
 }
 
 export interface TestConfig {

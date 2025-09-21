@@ -10,6 +10,144 @@ export class ActionExecutor {
     this.page = page;
   }
 
+  /**
+   * Executes a sequence of test steps, supporting iterative step groups.
+   * If steps are marked with iterativeGroup, the first step's selector determines iteration count
+   * and subsequent steps in the group execute for each matching element.
+   */
+  async executeSteps(steps: TestStep[], context: Record<string, any> = {}) {
+    let i = 0;
+    while (i < steps.length) {
+      const step = steps[i];
+
+      // Check if this step starts an iterative group
+      if (step.iterativeGroup) {
+        const groupId = step.iterativeGroup;
+        const groupSteps: TestStep[] = [];
+
+        // Collect all consecutive steps with the same iterativeGroup ID
+        let j = i;
+        while (j < steps.length && steps[j].iterativeGroup === groupId) {
+          groupSteps.push(steps[j]);
+          j++;
+        }
+
+        // Execute the iterative group
+        logger.info(`Executing iterative group: ${groupId} with ${groupSteps.length} steps`, "ActionExecutor");
+        await this.executeIterativeGroup(groupSteps, context);
+
+        // Skip to after the group
+        i = j;
+      } else {
+        // Execute single step normally
+        logger.info(`Executing step: ${step.stepName}`, "ActionExecutor");
+        await this.executeStep(step, context);
+        i++;
+      }
+    }
+  }  /**
+   * Executes a group of steps iteratively based on the first step's selector matches.
+   *
+   * Key behavior:
+   * 1. The FIRST step's selector determines the number of iterations
+   * 2. If step 1 selector finds N elements in the DOM, the entire group executes N times
+   * 3. Each iteration processes one element (step1[0] -> step2[0], step1[1] -> step2[1], etc.)
+   * 4. All steps in the group are executed completely for each iteration before moving to the next
+   *
+   * Example: If step 1 selector ".todo-list li" finds 5 elements, and you have steps 1,2,3 in the group:
+   * - Iteration 1: Execute step1[0], step2[0], step3[0]
+   * - Iteration 2: Execute step1[1], step2[1], step3[1]
+   * - Iteration 3: Execute step1[2], step2[2], step3[2]
+   * - Iteration 4: Execute step1[3], step2[3], step3[3]
+   * - Iteration 5: Execute step1[4], step2[4], step3[4]
+   */
+  async executeIterativeGroup(groupSteps: TestStep[], context: Record<string, any> = {}) {
+    if (groupSteps.length === 0) return;
+
+    const firstStep = groupSteps[0];
+    let mainLocator: Locator | undefined;
+
+    // Get the main locator from the first step that determines iteration count
+    if (firstStep.selector) {
+      mainLocator = this.getLocator(firstStep.selector, firstStep.selectorType);
+      if (typeof firstStep.nth === "number" && firstStep.nth >= 0) {
+        mainLocator = mainLocator.nth(firstStep.nth);
+      }
+    }
+
+    if (!mainLocator) {
+      logger.warn("Iterative group first step has no selector, executing steps normally", "ActionExecutor");
+      // Fallback to normal execution
+      for (const step of groupSteps) {
+        await this.executeStep(step, context);
+      }
+      return;
+    }
+
+    // Count how many elements match the first step's selector
+    const elementCount = await mainLocator.count();
+    logger.info(`Executing iterative group with ${elementCount} iterations based on selector: ${firstStep.selector}`, "ActionExecutor");
+
+    // Execute all steps in the group for each matching element
+    for (let i = 0; i < elementCount; i++) {
+      const iterationContext = { ...context, iterationIndex: i, totalIterations: elementCount };
+      logger.info(`Starting iteration ${i + 1}/${elementCount} for iterative group`, "ActionExecutor");
+
+      for (const step of groupSteps) {
+        await this.executeStepWithIteration(step, i, iterationContext);
+
+        // Apply step-specific wait time
+        if (step.waitTime) {
+          await this.page.waitForTimeout(step.waitTime);
+        }
+      }
+    }
+  }
+
+  /**
+   * Executes a step with iteration context, modifying selectors to target the nth element.
+   */
+  async executeStepWithIteration(step: TestStep, iterationIndex: number, context: Record<string, any> = {}) {
+    let locator: Locator | undefined;
+
+    if (step.selector) {
+      // Get base locator and target the specific iteration element
+      const baseLocator = this.getLocator(step.selector, step.selectorType);
+
+      // If the step has its own nth specified, use that, otherwise use iteration index
+      const targetIndex = typeof step.nth === "number" && step.nth >= 0 ? step.nth : iterationIndex;
+      locator = baseLocator.nth(targetIndex);
+    }
+
+    // Execute the action for this iteration
+    await this._executeAction(step, locator, context);
+
+        // Execute validations for this iteration
+    if (step.validations) {
+      for (const validation of step.validations) {
+        // For validations, also apply iteration context if they have selectors
+        let validationLocator = validation.selector
+          ? this.getLocator(validation.selector, (validation.selectorType as any))
+          : locator;
+
+        // Apply iteration index to validation locator if it doesn't have its own nth
+        if (validationLocator && validation.selector) {
+          // If validation has its own nth, use that, otherwise use iteration index
+          if (typeof (validation as any).nth === "number" && (validation as any).nth >= 0) {
+            validationLocator = validationLocator.nth((validation as any).nth);
+            logger.info(`Using validation nth: ${(validation as any).nth} for selector: ${validation.selector}`, "ActionExecutor");
+          } else {
+            // For iterative groups, scope validation selectors to the current iteration
+            validationLocator = validationLocator.nth(iterationIndex);
+            logger.info(`Using iteration index: ${iterationIndex} for validation selector: ${validation.selector}`, "ActionExecutor");
+          }
+        }
+
+        await this.executeValidation(validation, { locator: validationLocator, context });
+      }
+    }
+  }
+
   getLocator(selector: string, selectorType: "css" | "xpath" | "id" | "text" | "testId" = "css"): Locator {
     switch (selectorType) {
       case "css":
@@ -156,12 +294,10 @@ export class ActionExecutor {
         if (step.waitTime) await this.page.waitForTimeout(step.waitTime);
         break;
       case "custom":
-        // @ts-ignore allow customName from JSON
-        if (!(step as any).customName || !customLogicMap[(step as any).customName]) {
-          throw new Error(`Custom action '${(step as any).customName}' not found in customLogicMap.`);
+        if (!step.customName || !customLogicMap[step.customName]) {
+          throw new Error(`Custom action '${step.customName}' not found in customLogicMap.`);
         }
-        // @ts-ignore allow customName from JSON
-        await customLogicMap[(step as any).customName](this.page, step, context, locator);
+        await customLogicMap[step.customName](this.page, step, context, locator);
         break;
       default:
         throw new Error(`Unsupported action: ${step.action}`);
@@ -169,15 +305,21 @@ export class ActionExecutor {
   }
 
   async executeValidation(validation: ValidationStep, extras: { locator?: Locator; context?: Record<string, any> } = {}) {
-    let locator = validation.selector
-      ? this.getLocator(
-          validation.selector,
-          (validation.selectorType as any) // narrow to supported types
-        )
-      : extras.locator;
-    if (locator && typeof (validation as any).nth === "number" && (validation as any).nth >= 0) {
-      locator = locator.nth((validation as any).nth as number);
+    // Priority: If validation specifies its own selector, build a fresh locator.
+    // Otherwise fall back to the passed locator (e.g., from iteration context).
+    let locator: Locator | undefined;
+    if (validation.selector) {
+      locator = this.getLocator(
+        validation.selector,
+        (validation.selectorType as any)
+      );
+      if (locator && typeof (validation as any).nth === "number" && (validation as any).nth >= 0) {
+        locator = locator.nth((validation as any).nth as number);
+      }
+    } else if (extras.locator) {
+      locator = extras.locator;
     }
+
     const currentExpect: typeof expect = validation.soft ? (expect as any).soft : expect;
     const opts = (validation as any).expectOptions as any;
 
@@ -208,6 +350,11 @@ export class ActionExecutor {
         await currentExpect(locator, validation.message).toHaveValue(String(validation.data ?? ""), opts);
         break;
       }
+      case "toContainText": {
+        if (!locator) throw new Error("toContainText requires a selector");
+        await currentExpect(locator, validation.message).toContainText(String(validation.data ?? ""), opts);
+        break;
+      }
       case "toHaveAttribute":
         if (!validation.attribute) {
           throw new Error(
@@ -232,8 +379,7 @@ export class ActionExecutor {
         break;
       }
       case "custom": {
-        // @ts-ignore allow customName on validation
-        const name = (validation as any).customName;
+        const name = validation.customName;
         if (!name || !customValidationMap[name]) {
           throw new Error(`Custom validation '${name}' not found in customValidationMap.`);
         }
